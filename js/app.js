@@ -731,6 +731,74 @@
       triggerCelebration();
     };
 
+    // ==========================================
+    // 11. PWA 安裝提示機制 (Android / iOS)
+    // ==========================================
+    let deferredPrompt = null;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    const banner = document.getElementById('androidInstallBanner');
+    const btnBannerInstall = document.getElementById('btn-banner-install');
+    const btnBannerDismiss = document.getElementById('btn-banner-dismiss');
+    const btnFloatingInstall = document.getElementById('btn-floating-install');
+    const iosModal = document.getElementById('iosInstallModal');
+    const btnCloseIosModal = document.getElementById('btn-close-ios-modal');
+
+    // Android / 支援 beforeinstallprompt 的瀏覽器
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!isStandalone) {
+        if (banner) banner.classList.remove('hidden');
+        if (btnFloatingInstall) btnFloatingInstall.classList.remove('hidden');
+      }
+    });
+
+    if (btnBannerInstall) {
+      btnBannerInstall.onclick = async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            if (banner) banner.classList.add('hidden');
+            if (btnFloatingInstall) btnFloatingInstall.classList.add('hidden');
+          }
+          deferredPrompt = null;
+        }
+      };
+    }
+
+    if (btnBannerDismiss) {
+      btnBannerDismiss.onclick = () => {
+        if (banner) banner.classList.add('hidden');
+      };
+    }
+
+    // 右下角懸浮按鈕點擊
+    if (btnFloatingInstall) {
+      // 若是 iOS 且尚未加入桌面，常態顯示懸浮按鈕
+      if (isIOS && !isStandalone) {
+        btnFloatingInstall.classList.remove('hidden');
+      }
+
+      btnFloatingInstall.onclick = () => {
+        if (deferredPrompt) {
+          btnBannerInstall.click();
+        } else if (isIOS) {
+          if (iosModal) iosModal.classList.remove('hidden');
+        } else {
+          alert('請點擊瀏覽器右上角選單（三個點）➔ 選擇「加到主螢幕」即可安裝！');
+        }
+      };
+    }
+
+    if (btnCloseIosModal) {
+      btnCloseIosModal.onclick = () => {
+        if (iosModal) iosModal.classList.add('hidden');
+      };
+    }
+
     // 註冊 Service Worker (PWA)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(err => {

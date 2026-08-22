@@ -5,11 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0B1329">
   <meta name="description" content="專為長者設計的極簡股票認知訓練與家庭資產關懷 App">
-  <title>小股同學 - 我的股票</title>
+  <meta property="og:title" content="小股同學 - 專為長者設計的極簡股票與大腦健腦操">
+  <meta property="og:description" content="大字體、語音陪伴、每日大腦問答與家庭資產關懷，讓長輩天天開心動動腦！">
+  <meta property="og:image" content="https://pod0987183520.github.io/stock/z_img_line.png">
+  <meta property="og:url" content="https://pod0987183520.github.io/stock/">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="theme-senior">
+
+  <!-- Android / 瀏覽器安裝提示橫幅 -->
+  <div id="androidInstallBanner" class="install-banner hidden">
+    <div class="banner-text">
+      <strong>📲 將「小股同學」加入桌面</strong>
+      <span>字體超大，不用每次找網址！</span>
+    </div>
+    <div class="banner-btn-group">
+      <button id="btn-banner-install" class="btn-banner-action">立即安裝</button>
+      <button id="btn-banner-dismiss" class="btn-banner-close">稍後</button>
+    </div>
+  </div>
+
+  <!-- iOS Safari 加入主畫面教學彈窗 -->
+  <div id="iosInstallModal" class="modal-overlay hidden">
+    <div class="modal-card ios-modal-content">
+      <h3 class="ios-modal-title">🍏 iPhone / iPad 加入桌面教學</h3>
+      <div class="ios-steps">
+        <p>1. 點擊瀏覽器最下方的 <strong>「分享」圖示 📤</strong></p>
+        <p>2. 往下滑動，點選 <strong>「加入主畫面」 ➕</strong></p>
+        <p>3. 點擊右上角 <strong>「新增」</strong> 即可在桌面秒開使用！</p>
+      </div>
+      <button id="btn-close-ios-modal" class="btn-primary-senior" style="margin-top: 20px;">我知道了 👍</button>
+    </div>
+  </div>
+
+  <!-- 懸浮「加入主畫面」按鈕 -->
+  <button id="btn-floating-install" class="floating-install-btn hidden">
+    📲 加入主畫面
+  </button>
 
   <!-- 頂部導覽列 / 問候區 -->
   <header class="app-header">

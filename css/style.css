@@ -33,6 +33,104 @@
   --btn-min-height: 68px;
 }
 
+/* 安裝提示橫幅 (Android / 瀏覽器) */
+.install-banner {
+  background: linear-gradient(135deg, #1E1B4B, #312E81);
+  border-bottom: 3px solid #818CF8;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-text strong {
+  font-size: 22px;
+  color: #FEF08A;
+}
+
+.banner-text span {
+  font-size: 18px;
+  color: #E2E8F0;
+}
+
+.banner-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-banner-action {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  border: 2px solid #FEF08A;
+  color: #000000;
+  font-size: 20px;
+  font-weight: 900;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-banner-close {
+  background: transparent;
+  border: 1px solid #94A3B8;
+  color: #CBD5E1;
+  font-size: 18px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+/* 懸浮加入主畫面按鈕 (右下角) */
+.floating-install-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 60;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border: 3px solid #6EE7B7;
+  color: #FFFFFF;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 14px 22px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+  cursor: pointer;
+  animation: pulseInstall 2s infinite ease-in-out;
+}
+
+@keyframes pulseInstall {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* iOS 彈窗樣式 */
+.ios-modal-title {
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--color-accent);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.ios-steps {
+  font-size: 24px;
+  line-height: 1.8;
+  color: #F1F5F9;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 18px;
+  border-radius: var(--radius-md);
+}
+
 /* 重置與基本設定 */
 * {
   box-sizing: border-box;
