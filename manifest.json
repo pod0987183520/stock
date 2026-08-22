@@ -1,0 +1,17 @@
+{
+  "name": "小股同學 - 我的股票",
+  "short_name": "小股同學",
+  "description": "專為長者設計的極簡股票認知訓練與家庭資產關懷 App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0B1329",
+  "theme_color": "#0B1329",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

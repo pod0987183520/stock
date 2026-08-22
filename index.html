@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0B1329">
+  <meta name="description" content="專為長者設計的極簡股票認知訓練與家庭資產關懷 App">
+  <title>小股同學 - 我的股票</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-senior">
+
+  <!-- 頂部導覽列 / 問候區 -->
+  <header class="app-header">
+    <div class="header-content">
+      <!-- 連續點擊 10 下解鎖晚輩後台的 Logo 按鈕 -->
+      <button id="btn-unlock-caregiver" class="avatar-btn" title="小股同學">
+        <div class="avatar-glow">
+          <span class="avatar-emoji">🐻</span>
+        </div>
+      </button>
+
+      <div class="greeting-info">
+        <h1 id="user-greeting" class="title-senior">伯伯，早安！</h1>
+        <p id="sub-greeting" class="sub-senior">小股陪您看股票、動動腦</p>
+      </div>
+
+      <!-- 語音播報大按鈕 -->
+      <button id="btn-speak-all" class="btn-voice-toggle" title="聽小股說話">
+        <span class="voice-icon">🔊</span>
+        <span class="voice-text">聽小股說</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="main-container">
+
+    <!-- 模式標籤 (真實資產 / 模擬大亨 / 獨立看盤) -->
+    <div class="mode-badge-container">
+      <span id="current-mode-badge" class="mode-badge">🏠 晚輩陪伴模式</span>
+      <span id="streak-badge" class="streak-badge">⭐ 大腦打卡 3 天</span>
+    </div>
+
+    <!-- 1. 股票卡片清單區 (最多 3 檔) -->
+    <section class="stocks-section" aria-label="我的自選股票">
+      <h2 class="section-title">📊 我的股票看板</h2>
+      <div id="stocks-list" class="stocks-grid">
+        <!-- 動態渲染股票卡片 -->
+      </div>
+    </section>
+
+    <!-- 2. 每日大腦認知問答卡片 -->
+    <section class="quiz-section" aria-label="每日認知問答">
+      <div class="card card-quiz">
+        <div class="quiz-header">
+          <span class="quiz-tag">🧠 每日大腦健腦操</span>
+          <span id="medal-count" class="medal-count">🏅 x 12 枚</span>
+        </div>
+        
+        <h3 id="quiz-question" class="quiz-question-text">
+          載入題目中...
+        </h3>
+
+        <!-- 雙軌答題區：語音辨識 + 超大選項卡片 -->
+        <div class="quiz-interactive-zone">
+          <!-- 語音聆聽按鈕 -->
+          <button id="btn-mic-answer" class="btn-mic" title="點擊說出答案">
+            <span class="mic-icon">🎙️</span>
+            <span id="mic-status-text" class="mic-status">按我開口回答</span>
+          </button>
+
+          <!-- 2~3 個超大選項按鈕 -->
+          <div id="quiz-options-container" class="quiz-options-grid">
+            <!-- 動態產生按鈕 -->
+          </div>
+        </div>
+
+        <!-- 小股溫情回饋提示 -->
+        <div id="quiz-feedback" class="quiz-feedback-box hidden">
+          <p id="quiz-feedback-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. AI 溫情口語建議卡片 -->
+    <section class="ai-advice-section" aria-label="小股溫馨建議">
+      <div class="card card-advice">
+        <div class="advice-header">
+          <span class="advice-tag">💡 小股生活貼心話</span>
+          <button id="btn-read-advice" class="btn-sound-small" title="朗讀建議">🔊 聽建議</button>
+        </div>
+        <p id="ai-advice-text" class="advice-text">
+          「伯伯，今天天氣不錯，台積電走勢也很平穩，我們放寬心，多喝溫開水、出門散散步喔！」
+        </p>
+      </div>
+    </section>
+
+    <!-- 4. 孝親零用金 / 收到紅包紀錄 -->
+    <section class="pocket-money-section" aria-label="孝親零用金">
+      <div class="card card-pocket">
+        <div class="pocket-header">
+          <span class="pocket-title">🧧 我的孝親零用金</span>
+          <span id="pocket-balance" class="pocket-balance">$15,000 元</span>
+        </div>
+        <p class="pocket-sub">晚輩心意與分紅回饋，安心存在口袋裡！</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 5. 孝親紅包驚喜彈窗 (Surprise Modal) -->
+  <div id="modal-red-envelope" class="modal-overlay hidden">
+    <div class="modal-card envelope-card animate-pop">
+      <div class="envelope-icon">🧧</div>
+      <h2 class="envelope-title">收到孝親紅包囉！</h2>
+      <p id="envelope-sender" class="envelope-desc">來自 小明（兒子） 的貼心補貼</p>
+      <div id="envelope-amount" class="envelope-amount">+ $5,000 元</div>
+      <p id="envelope-note" class="envelope-note">「爸，股票少算我的，您安心過日子！」</p>
+      <button id="btn-claim-envelope" class="btn-primary-senior">開心收下紅包 🎁</button>
+    </div>
+  </div>
+
+  <!-- 6. 答對金牌慶祝全螢幕動效層 -->
+  <div id="celebration-layer" class="celebration-layer hidden">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="medal-popup animate-bounce">
+      <div class="huge-medal">🏅</div>
+      <h2 class="medal-title">太棒了！答對了！</h2>
+      <p class="medal-subtitle">恭喜獲得 1 枚神算金牌！</p>
+    </div>
+  </div>
+
+  <!-- 7. 夜間沉睡 / 休市日落安撫全螢幕遮罩 (Sundowning Mode) -->
+  <div id="night-rest-layer" class="night-layer hidden">
+    <div class="night-content">
+      <div class="moon-icon animate-float">🌙</div>
+      <h2 class="night-title">股市休息囉，安心就寢</h2>
+      <p id="night-clock" class="night-clock">21:30</p>
+      <p class="night-desc">
+        所有的股票都在安全睡覺，小股幫您看著呢！<br>
+        現在先好好休息，我們明天早上 9 點再來看看它們喔～
+      </p>
+      <button id="btn-play-night-soothe" class="btn-night-soothe">🎵 聽小股晚安安撫曲</button>
+      <button id="btn-dismiss-night" class="btn-night-exit">我只是看一下，進入白天畫面</button>
+    </div>
+  </div>
+
+  <!-- 8. 晚輩 / 照護者控制台 (Caregiver Modal - 10擊解鎖) -->
+  <div id="modal-caregiver" class="modal-overlay hidden">
+    <div class="modal-card caregiver-card">
+      <div class="caregiver-header">
+        <h2>🛠️ 晚輩與照護者管理後台</h2>
+        <button id="btn-close-caregiver" class="btn-close">✕</button>
+      </div>
+
+      <div class="caregiver-body">
+        <!-- 裝置角色設定 -->
+        <div class="form-group">
+          <label class="form-label">📱 此裝置目前設定為：</label>
+          <div class="role-selector">
+            <label class="radio-label">
+              <input type="radio" name="deviceRole" value="senior" checked> 👴 長輩端 (Senior View)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="deviceRole" value="caregiver"> 🧑 晚輩端 (Caregiver View)
+            </label>
+          </div>
+        </div>
+
+        <!-- 運作模式設定 -->
+        <div class="form-group">
+          <label class="form-label">🎯 關懷模式選擇：</label>
+          <select id="setting-app-mode" class="form-input">
+            <option value="family">🏠 家庭晚輩陪伴模式 (推薦)</option>
+            <option value="simulation">🎮 模擬大亨遊戲模式 (虛擬100萬)</option>
+            <option value="self">👴 獨立長者 / 營業員模式</option>
+          </select>
+        </div>
+
+        <!-- 長輩手機號碼綁定 (免簡訊驗證) -->
+        <div class="form-group">
+          <label class="form-label">📞 長輩手機號碼 (雙端免密碼綁定)：</label>
+          <input type="tel" id="setting-elder-phone" class="form-input" placeholder="例如：0912345678">
+          <p class="form-hint">晚輩手機輸入相同號碼即可立即同步連線。</p>
+        </div>
+
+        <!-- 長者稱謂與聯絡人 -->
+        <div class="form-group">
+          <label class="form-label">👤 長者尊稱：</label>
+          <input type="text" id="setting-elder-title" class="form-input" placeholder="伯伯 / 阿姨 / 媽媽 / 陳大哥">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📱 達標時一鍵撥打之聯絡人姓名與電話：</label>
+          <div class="input-row">
+            <input type="text" id="setting-contact-name" class="form-input" placeholder="聯絡人名稱 (如：小明)">
+            <input type="tel" id="setting-contact-phone" class="form-input" placeholder="電話號碼 (如：0987654321)">
+          </div>
+        </div>
+
+        <!-- 發送孝親紅包小工具 (晚輩專用) -->
+        <div class="form-group bonus-group">
+          <label class="form-label">🎁 發送孝親紅包 / 股息補貼給長輩：</label>
+          <div class="input-row">
+            <input type="number" id="input-bonus-amount" class="form-input" placeholder="金額 (如：5000)" value="5000">
+            <input type="text" id="input-bonus-note" class="form-input" placeholder="溫情備註" value="股票拉回孝親補貼">
+          </div>
+          <button id="btn-send-bonus" class="btn-send-bonus">🚀 發送紅包至長輩手機</button>
+        </div>
+
+        <!-- 股票清單編輯區 -->
+        <div class="form-group">
+          <label class="form-label">📈 自選股票設定 (最多3檔)：</label>
+          <div id="caregiver-stocks-editor" class="stocks-editor-list">
+            <!-- 動態渲染股票編輯欄位 -->
+          </div>
+        </div>
+
+        <button id="btn-save-caregiver" class="btn-primary-save">💾 儲存並套用設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心腳本載入 -->
+  <script src="js/app.js"></script>
+</body>
+</html>
