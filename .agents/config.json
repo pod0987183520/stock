@@ -1,0 +1,12 @@
+{
+  "projectName": "小股同學 (我的股票)",
+  "mainRepository": {
+    "account": "pod0987183520",
+    "remoteName": "origin",
+    "branch": "main",
+    "url": "https://github.com/pod0987183520/stock.git"
+  },
+  "checkpointLogPath": "Checkpoints.md",
+  "archiveRulesPath": ".agents/archive_rules/",
+  "versionFormat": "vX.XX"
+}
