@@ -91,10 +91,10 @@
             name: '台積電',
             buyPrice: 850,
             shares: 1000,
-            currentPrice: 980,
-            prevTickPrice: 980,
+            currentPrice: 2410,
+            prevTickPrice: 2410,
             lastDiff: 0,
-            targetPrice: 1000,
+            targetPrice: 2600,
             marketTrend: '強勢上漲',
             newsSentiment: '正面',
             aiAdvice: '爸爸，台積電這幾天表現很亮眼，離您設定的目標價很近了喔！'
@@ -104,10 +104,10 @@
             name: '中華電',
             buyPrice: 120,
             shares: 3000,
-            currentPrice: 125,
-            prevTickPrice: 125,
+            currentPrice: 136.5,
+            prevTickPrice: 136.5,
             lastDiff: 0,
-            targetPrice: 130,
+            targetPrice: 145,
             marketTrend: '盤整平穩',
             newsSentiment: '平淡',
             aiAdvice: '爸爸，中華電信走勢很穩健，領股息安心過日子最棒了！'
@@ -369,40 +369,226 @@
         }
       });
 
-      // ⏱️ 正式定時頻率：每 1 分鐘 (60,000 ms) 自動檢查一次
+      // ⏱️ 正式定時頻率：每 1 分鐘 (60,000 ms) 自動檢查台股即時盤價
       setInterval(() => {
-        // 在開盤時間或模擬模式下進行微幅分時波動檢查
         performMinuteMarketCheck();
       }, 60000);
     }
   };
 
   // ==========================================
-  // 3. 盤中分時跳動偵測與語音即時播報 (Price Tick Detector)
+  // 3. 台灣股市即時行情與報價引擎 (Realtime Stock Service)
   // ==========================================
-  function performMinuteMarketCheck() {
+  const RealtimeStockService = {
+    cache: {},
+    inFlight: {},
+
+    // 取得單檔台股即時成交價與名稱 (自動支援上市/上櫃/ETF)
+    async fetchQuote(rawCode) {
+      if (!rawCode) return null;
+      const code = rawCode.toString().trim().toUpperCase();
+
+      // 1. 檢查 30 秒內的記憶體快取
+      const cached = this.cache[code];
+      if (cached && (Date.now() - cached.timestamp < 30000)) {
+        return cached.data;
+      }
+
+      // 2. 請求去重合流 (In-flight deduplication)
+      if (this.inFlight[code]) {
+        return this.inFlight[code];
+      }
+
+      const queryPromise = (async () => {
+        let quote = null;
+
+        // 策略 A: 證交所 TWSE OpenAPI (全台股每日最新收盤價/現價，開放 CORS)
+        try {
+          const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+          if (res.ok) {
+            const list = await res.json();
+            if (Array.isArray(list)) {
+              list.forEach(item => {
+                const c = item.Code ? item.Code.trim().toUpperCase() : '';
+                const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
+                if (c && !isNaN(p) && p > 0) {
+                  const itemQuote = {
+                    id: c,
+                    name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.Name || `股票(${c})`,
+                    price: p,
+                    prevClose: p,
+                    source: 'twse-openapi'
+                  };
+                  this.cache[c] = { data: itemQuote, timestamp: Date.now() };
+                  if (TaiwanStockDB[c]) {
+                    TaiwanStockDB[c].price = p;
+                  }
+                }
+              });
+              if (this.cache[code]) {
+                quote = this.cache[code].data;
+              }
+            }
+          }
+        } catch (e) {}
+
+        // 若為櫃買中心上櫃股票且尚未查得，查詢 TPEx OpenAPI
+        if (!quote) {
+          try {
+            const res = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes', { cache: 'no-store' });
+            if (res.ok) {
+              const list = await res.json();
+              if (Array.isArray(list)) {
+                list.forEach(item => {
+                  const c = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim().toUpperCase() : '';
+                  const p = parseFloat((item.Close || '').replace(/,/g, ''));
+                  if (c && !isNaN(p) && p > 0) {
+                    const itemQuote = {
+                      id: c,
+                      name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.CompanyName || `股票(${c})`,
+                      price: p,
+                      prevClose: p,
+                      source: 'tpex-openapi'
+                    };
+                    this.cache[c] = { data: itemQuote, timestamp: Date.now() };
+                    if (TaiwanStockDB[c]) {
+                      TaiwanStockDB[c].price = p;
+                    }
+                  }
+                });
+                if (this.cache[code]) {
+                  quote = this.cache[code].data;
+                }
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 策略 B: Yahoo Finance 實時行情 (支援上市 .TW 與上櫃 .TWO)
+        if (!quote) {
+          const tryYahoo = async (symbol) => {
+            try {
+              const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
+              if (res.ok) {
+                const data = await res.json();
+                const meta = data?.chart?.result?.[0]?.meta;
+                if (meta && (meta.regularMarketPrice || meta.previousClose)) {
+                  const p = parseFloat(meta.regularMarketPrice || meta.previousClose);
+                  return {
+                    id: code,
+                    name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || meta.shortName || `股票(${code})`,
+                    price: p,
+                    prevClose: parseFloat(meta.previousClose || meta.regularMarketPrice),
+                    source: 'yahoo-finance'
+                  };
+                }
+              }
+            } catch (e) {}
+            return null;
+          };
+
+          quote = await tryYahoo(`${code}.TW`);
+          if (!quote) quote = await tryYahoo(`${code}.TWO`);
+        }
+
+        // 策略 C: 本地資料庫兜底
+        if (!quote && TaiwanStockDB[code]) {
+          quote = {
+            id: code,
+            name: TaiwanStockDB[code].name,
+            price: TaiwanStockDB[code].price,
+            prevClose: TaiwanStockDB[code].price,
+            source: 'local-db'
+          };
+        }
+
+        if (quote) {
+          if (TaiwanStockDB[code]) {
+            TaiwanStockDB[code].price = quote.price;
+            if (quote.name && !quote.name.startsWith('股票(')) {
+              TaiwanStockDB[code].name = quote.name;
+            }
+          }
+          this.cache[code] = { data: quote, timestamp: Date.now() };
+        }
+
+        delete this.inFlight[code];
+        return quote;
+      })();
+
+      this.inFlight[code] = queryPromise;
+      return queryPromise;
+    },
+
+    // 批量刷新長輩的自選股票
+    async refreshElderStocks(elder) {
+      if (!elder || !elder.stocks || elder.stocks.length === 0) return false;
+      let changed = false;
+
+      for (let i = 0; i < elder.stocks.length; i++) {
+        const stock = elder.stocks[i];
+        if (!stock.id) continue;
+        try {
+          const q = await this.fetchQuote(stock.id);
+          if (q && q.price && q.price !== stock.currentPrice) {
+            stock.prevTickPrice = stock.currentPrice;
+            stock.lastDiff = q.price - stock.currentPrice;
+            stock.currentPrice = q.price;
+            if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
+              stock.name = q.name;
+            }
+            changed = true;
+          }
+        } catch (e) {}
+      }
+
+      return changed;
+    },
+
+    // 全局長輩股票即時同步
+    async syncAllElderStocks() {
+      const activeElder = getActiveElder();
+      let changed = await this.refreshElderStocks(activeElder);
+
+      // 同步背景更新另一位長輩
+      const otherId = (AppState.activeElderId === 'dad') ? 'mom' : 'dad';
+      const otherElder = AppState.elders[otherId];
+      if (otherElder) {
+        this.refreshElderStocks(otherElder).then(otherChanged => {
+          if (otherChanged) {
+            saveAppState();
+            CloudSync.pushElder(otherId);
+          }
+        });
+      }
+
+      if (changed) {
+        saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
+        renderAll();
+      }
+    }
+  };
+
+  // ==========================================
+  // 3.5 盤中分時跳動偵測與語音即時播報 (Price Tick Detector)
+  // ==========================================
+  async function performMinuteMarketCheck() {
     const elder = getActiveElder();
     if (!elder || !elder.stocks || elder.stocks.length === 0) return;
 
-    // 模擬長輩看盤的分時微幅波動 (每次 1~3 元上下微動，增加刺激感)
-    const targetStock = elder.stocks[0];
-    const prevPrice = targetStock.currentPrice;
+    // 即時連線股市 API 抓取最新真實市場現價
+    const hasChanged = await RealtimeStockService.refreshElderStocks(elder);
 
-    // 產生溫和的微幅跳動 (-2 ~ +3 元)
-    const randomDelta = Math.floor(Math.random() * 5) - 2; // -2, -1, 0, +1, +2
-    const newPrice = Math.max(10, prevPrice + randomDelta);
+    if (hasChanged) {
+      saveAppState();
+      CloudSync.pushElder(AppState.activeElderId);
+      renderAll();
 
-    targetStock.currentPrice = newPrice;
-    targetStock.lastDiff = newPrice - prevPrice;
-    targetStock.prevTickPrice = prevPrice;
-
-    saveAppState();
-    CloudSync.pushElder(AppState.activeElderId);
-    renderStocksList();
-
-    // 判斷是否觸發分時跳動語音播報
-    if (AppState.tickVoiceEnabled && targetStock.lastDiff !== 0 && AppState.deviceRole === 'senior') {
-      speakPriceTickAlert(elder, targetStock, targetStock.lastDiff);
+      const targetStock = elder.stocks[0];
+      if (AppState.tickVoiceEnabled && targetStock && targetStock.lastDiff !== 0 && AppState.deviceRole === 'senior') {
+        speakPriceTickAlert(elder, targetStock, targetStock.lastDiff);
+      }
     }
   }
 
@@ -1027,7 +1213,7 @@
   const TaiwanStockDB = {
     "2330": {
         "name": "台積電",
-        "price": 980
+        "price": 2410
     },
     "2317": {
         "name": "鴻海",
@@ -1039,7 +1225,7 @@
     },
     "2344": {
         "name": "華邦電",
-        "price": 28.5
+        "price": 181.0
     },
     "2303": {
         "name": "聯電",
@@ -2073,6 +2259,8 @@
       const handleIdChange = () => {
         const code = idInput.value.trim();
         if (!code) return;
+
+        // 1. 同步從本地資料庫秒帶出基準值 (極速零延遲)
         const match = lookupTaiwanStock(code);
         if (match) {
           nameInput.value = match.name;
@@ -2081,6 +2269,24 @@
           targetInput.value = Math.round(match.price * 1.15);
         } else {
           nameInput.value = `股票(${code})`;
+        }
+
+        // 2. 異步聯網查詢真實市場即時成交價 (例如 2344 華邦電 -> 181.00)
+        if (code.length >= 3) {
+          RealtimeStockService.fetchQuote(code).then((quote) => {
+            if (quote && idInput.value.trim().toUpperCase() === code.toUpperCase()) {
+              if (quote.name && !quote.name.startsWith('股票(')) {
+                nameInput.value = quote.name;
+              }
+              if (quote.price) {
+                currentInput.value = quote.price;
+                if (!buyInput.value || (match && parseFloat(buyInput.value) === match.price)) {
+                  buyInput.value = quote.price;
+                  targetInput.value = Math.round(quote.price * 1.15);
+                }
+              }
+            }
+          }).catch(() => {});
         }
       };
 
@@ -2151,6 +2357,11 @@
       renderAll();
       checkPendingEnvelopeForSenior();
     });
+
+    // 啟動即時股市行情自動同步
+    try {
+      RealtimeStockService.syncAllElderStocks();
+    } catch(e) {}
 
     // 晚輩端 1 對 2 標籤切換
     const tabDad = document.getElementById('tab-elder-dad');
