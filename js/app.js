@@ -599,32 +599,12 @@
 
       const randomIndex = Math.floor(Math.random() * quizList.length);
       this.currentQuiz = quizList[randomIndex];
-      this.render();
-    },
-
-    render() {
-      const qText = document.getElementById('quiz-question');
-      const optContainer = document.getElementById('quiz-options-container');
-      const feedbackBox = document.getElementById('quiz-feedback');
-
-      if (!qText || !optContainer) return;
-
-      qText.textContent = this.currentQuiz.question;
-      if (feedbackBox) feedbackBox.classList.add('hidden');
-      optContainer.innerHTML = '';
-
-      this.currentQuiz.options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-quiz-option';
-        btn.textContent = opt.text;
-        btn.onclick = () => this.handleAnswer(opt.value);
-        optContainer.appendChild(btn);
-      });
     },
 
     handleVoiceAnswer(transcript) {
       const text = transcript.trim();
       const quiz = this.currentQuiz;
+      if (!quiz) return;
 
       let answer = null;
       if (quiz.type === 'profit_judgment') {
@@ -659,7 +639,6 @@
         elder.gameStats.todayAnswered = true;
         saveAppState();
         CloudSync.pushElder(AppState.activeElderId);
-        updateHeaderAndBadges();
         triggerCelebration();
         Speech.speak(BilingualDict.getCorrectPraise(elder.title, isTw));
       } else {
@@ -670,13 +649,6 @@
     handleGentleFallback() {
       const elder = getActiveElder();
       const isTw = (elder.language === 'taiwanese');
-      const feedbackBox = document.getElementById('quiz-feedback');
-      const feedbackText = document.getElementById('quiz-feedback-text');
-      if (feedbackBox && feedbackText) {
-        feedbackBox.classList.remove('hidden');
-        feedbackText.textContent = `💡 小股小貼士：${this.currentQuiz.gentleHint} 我們一樣好棒！`;
-      }
-
       Speech.speak(BilingualDict.getGentleFallback(this.currentQuiz.gentleHint, isTw));
     }
   };
@@ -743,76 +715,14 @@
     generateProblem() {
       const idx = Math.floor(Math.random() * this.problemBank.length);
       this.currentProblem = this.problemBank[idx];
-      this.render();
-    },
-
-    render() {
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const qEl = document.getElementById('market-question');
-      const optContainer = document.getElementById('market-options-container');
-      const feedbackBox = document.getElementById('market-feedback');
-
-      if (!qEl || !optContainer) return;
-
-      qEl.textContent = isTw ? this.currentProblem.questionTw : this.currentProblem.questionZh;
-      if (feedbackBox) feedbackBox.classList.add('hidden');
-      optContainer.innerHTML = '';
-
-      this.currentProblem.options.forEach(num => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-quiz-option';
-        btn.textContent = `${num} 元`;
-        btn.onclick = () => this.handleAnswer(num);
-        optContainer.appendChild(btn);
-      });
     },
 
     speakQuestion() {
       const elder = getActiveElder();
       const isTw = (elder.language === 'taiwanese');
-      Speech.speak(isTw ? this.currentProblem.voiceTw : this.currentProblem.voiceZh);
-    },
-
-    handleVoiceAnswer(transcript) {
-      const matched = transcript.match(/\d+/);
-      if (matched) {
-        this.handleAnswer(parseInt(matched[0]));
-      } else {
-        this.handleGentleFallback();
+      if (this.currentProblem) {
+        Speech.speak(isTw ? this.currentProblem.voiceTw : this.currentProblem.voiceZh);
       }
-    },
-
-    handleAnswer(userAns) {
-      const isCorrect = (userAns === this.currentProblem.correctAnswer);
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-
-      if (isCorrect) {
-        elder.gameStats.medals += 1;
-        saveAppState();
-        CloudSync.pushElder(AppState.activeElderId);
-        updateHeaderAndBadges();
-        triggerCelebration();
-        Speech.speak(BilingualDict.getCorrectPraise(elder.title, isTw));
-      } else {
-        this.handleGentleFallback();
-      }
-    },
-
-    handleGentleFallback() {
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const hint = isTw ? this.currentProblem.hintTw : this.currentProblem.hintZh;
-      const feedbackBox = document.getElementById('market-feedback');
-      const feedbackText = document.getElementById('market-feedback-text');
-
-      if (feedbackBox && feedbackText) {
-        feedbackBox.classList.remove('hidden');
-        feedbackText.textContent = `🥦 菜市場小算盤：${hint}`;
-      }
-
-      Speech.speak(BilingualDict.getGentleFallback(hint, isTw));
     }
   };
 
@@ -820,30 +730,30 @@
   // 8. 中長期穩健股話題引擎 (Solid Stock Topic Engine)
   // ==========================================
   const SolidStockTopicEngine = {
-    currentIndex: 0,
+    currentTopicIndex: 0,
 
     stocksData: [
       {
-        name: '中華電 (2412)',
+        name: '中華電信 (2412)',
         badge: '電信龍頭．防禦首選',
         yield: '約 4.2%',
         divYears: '連續 26 年',
-        stability: '⭐⭐⭐⭐⭐ 極高',
-        speechZh: '「${title}，小股最近做功課，覺得中華電信長期配息穩定，遇到市場震盪也很抗跌，很適合作為中長期領股利的防守資產。您在股市經驗豐富，您覺得小股的看法怎麼樣呢？」',
-        speechTw: '「${title}，小股最近做功課，感覺中華電信長年配息足穩定，遇到風浪亦足抗跌，足適合中長期領股利。您在股市經驗豐富，您感覺小股的看法按怎呢？」',
-        agreeFeedbackZh: '太棒了！有您這位股市老前輩肯定，小股信心大增！我們一起穩健看長遠！',
-        agreeFeedbackTw: '水啦！有您這位股市大前輩肯定，小股信心滿滿！咱做伙穩穩領股利！',
-        cautiousFeedbackZh: '您說得真對！投資本來就要多看多比較、沉得住氣，薑還是老的辣，小股學到寶貴的一課！',
-        cautiousFeedbackTw: '您講得真著！投資本來著要多看多比較，薑是老的辣，小股學著寶貴的一課！'
+        stability: '⭐⭐⭐⭐⭐ 極穩健',
+        speechZh: '「${title}，中華電信長期配息穩定，遇到市場震盪也很抗跌，很適合作為中長期領股利的防守資產。您覺得小股的看法怎麼樣呢？」',
+        speechTw: '「${title}，中華電信長年配息足穩定，遇到風浪亦足抗跌，足適合中長期領股利。您感覺小股的看法按怎呢？」',
+        agreeFeedbackZh: '太好了！得到您的認同，小股覺得存股就是要選這種讓人睡得著覺的好公司！',
+        agreeFeedbackTw: '太好了！得到您的肯定，小股感覺存股著是要選這款予人睏得落眠的好公司！',
+        cautiousFeedbackZh: '謝謝您的提醒！電信業成長較慢，確實需要關注資產配置，小股會持續學習！',
+        cautiousFeedbackTw: '多謝您的提醒！電信業成長較慢，確實需要關注資產配置，小股會繼續學習！'
       },
       {
-        name: '兆豐金 (2886)',
+        name: '兆豐金控 (2886)',
         badge: '官股金控．獲利穩健',
         yield: '約 4.8%',
         divYears: '連續 22 年',
-        stability: '⭐⭐⭐⭐⭐ 極高',
-        speechZh: '「${title}，小股看到兆豐金控官股背景強，外匯與企金獲利穩健，長年配息大方，逢拉回分批存很安心。您覺得小股這個想法如何呢？」',
-        speechTw: '「${title}，小股看著兆豐金官股背景足厚，外匯獲利穩健，長年分紅大方，拉回分批存足安心。您感覺小股按呢想有道理無？」',
+        stability: '⭐⭐⭐⭐ 穩健',
+        speechZh: '「${title}，兆豐金控官股背景強，獲利穩健，長年配息大方，逢拉回分批存很安心。您覺得小股這個想法如何呢？」',
+        speechTw: '「${title}，兆豐金官股背景足厚，獲利穩健，長年分紅大方，拉回分批存足安心。您感覺小股按呢想有道理無？」',
         agreeFeedbackZh: '太好了！得到您的認同，小股覺得存股就是要選這種讓人睡得著覺的好公司！',
         agreeFeedbackTw: '太好了！得到您的肯定，小股感覺存股著是要選這款予人睏得落眠的好公司！',
         cautiousFeedbackZh: '謝謝您的提醒！金控股還是要關注降息循環與資產品質，小股會繼續保守觀察！',
@@ -888,67 +798,7 @@
         cautiousFeedbackZh: '您說得是！鋼鐵景氣有循環週期，買在低檔更重要，小股會記住您的經驗談！',
         cautiousFeedbackTw: '您講得真著！鋼鐵有景氣循環，買在低位閣較重要，小股會記在心內！'
       }
-    ],
-
-    render() {
-      const stock = this.stocksData[this.currentIndex];
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-
-      const nameEl = document.getElementById('topic-stock-name');
-      const badgeEl = document.getElementById('topic-badge-type');
-      const yieldEl = document.getElementById('topic-yield');
-      const divYearsEl = document.getElementById('topic-div-years');
-      const stabilityEl = document.getElementById('topic-stability');
-      const speechEl = document.getElementById('topic-speech-text');
-      const feedbackBox = document.getElementById('topic-feedback-box');
-
-      if (nameEl) nameEl.textContent = stock.name;
-      if (badgeEl) badgeEl.textContent = stock.badge;
-      if (yieldEl) yieldEl.textContent = stock.yield;
-      if (divYearsEl) divYearsEl.textContent = stock.divYears;
-      if (stabilityEl) stabilityEl.textContent = stock.stability;
-
-      const speechTemplate = isTw ? stock.speechTw : stock.speechZh;
-      const formattedSpeech = speechTemplate.replace('${title}', elder.title);
-
-      if (speechEl) speechEl.textContent = formattedSpeech;
-      if (feedbackBox) feedbackBox.classList.add('hidden');
-    },
-
-    speakTopic() {
-      const stock = this.stocksData[this.currentIndex];
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const speechTemplate = isTw ? stock.speechTw : stock.speechZh;
-      const formattedSpeech = speechTemplate.replace('${title}', elder.title);
-      Speech.speak(formattedSpeech);
-    },
-
-    handleOpinion(agree) {
-      const stock = this.stocksData[this.currentIndex];
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const feedbackBox = document.getElementById('topic-feedback-box');
-      const feedbackText = document.getElementById('topic-feedback-text');
-
-      const responseText = agree
-        ? (isTw ? stock.agreeFeedbackTw : stock.agreeFeedbackZh)
-        : (isTw ? stock.cautiousFeedbackTw : stock.cautiousFeedbackZh);
-
-      if (feedbackBox && feedbackText) {
-        feedbackBox.classList.remove('hidden');
-        feedbackText.textContent = `💬 小股回饋：${responseText}`;
-      }
-
-      Speech.speak(responseText);
-    },
-
-    nextStock() {
-      this.currentIndex = (this.currentIndex + 1) % this.stocksData.length;
-      this.render();
-      this.speakTopic();
-    }
+    ]
   };
 
   // ==========================================
@@ -1035,6 +885,8 @@
   // ==========================================
   // 10. UI 主視圖路由與渲染 (Dual View Switcher)
   // ==========================================
+  let currentStockIndex = 0;
+
   function renderAll() {
     const isCaregiver = (AppState.deviceRole === 'caregiver');
     const seniorView = document.getElementById('senior-view-container');
@@ -1047,15 +899,8 @@
     } else {
       if (seniorView) seniorView.classList.remove('hidden');
       if (caregiverView) caregiverView.classList.add('hidden');
-      updateLanguageUI();
-      updateHeaderAndBadges();
       updateTickVoiceButtonUI();
-      renderStocksList();
-      renderAiAdvice();
-      renderPocketMoney();
-      QuizEngine.generateQuiz();
-      MarketMathEngine.generateProblem();
-      SolidStockTopicEngine.render();
+      renderSingleStockView();
       checkNightMode();
     }
   }
@@ -1077,278 +922,331 @@
     }
   }
 
-  function updateLanguageUI() {
+  // 渲染單一股票一屏看板與大頁籤
+  function renderSingleStockView() {
     const elder = getActiveElder();
-    const isTw = (elder.language === 'taiwanese');
-    const btnLang = document.getElementById('btn-lang-toggle');
-    const iconEl = document.getElementById('lang-icon');
-    const textEl = document.getElementById('lang-text');
+    const stocks = elder.stocks || [];
+    if (stocks.length === 0) return;
 
-    if (btnLang && iconEl && textEl) {
-      if (isTw) {
-        btnLang.classList.add('active-tw');
-        iconEl.textContent = '🎙️';
-        textEl.textContent = '台語';
+    if (currentStockIndex >= stocks.length) {
+      currentStockIndex = 0;
+    }
+
+    // 1. 渲染頂部股票大頁籤
+    const tabsListEl = document.getElementById('stock-tabs-list');
+    if (tabsListEl) {
+      tabsListEl.innerHTML = '';
+      if (stocks.length > 1) {
+        tabsListEl.parentElement.style.display = 'block';
+        stocks.forEach((stk, idx) => {
+          const tabBtn = document.createElement('button');
+          tabBtn.className = `stock-tab-btn ${idx === currentStockIndex ? 'active' : ''}`;
+          tabBtn.innerHTML = `<span>${idx === currentStockIndex ? '🟢' : '⚪'}</span> <span>${stk.name} (${stk.id})</span>`;
+          tabBtn.onclick = () => {
+            currentStockIndex = idx;
+            renderSingleStockView();
+            speakCurrentStockBrief();
+          };
+          tabsListEl.appendChild(tabBtn);
+        });
       } else {
-        btnLang.classList.remove('active-tw');
-        iconEl.textContent = '🗣️';
-        textEl.textContent = '國語';
+        tabsListEl.parentElement.style.display = 'none';
       }
     }
-  }
 
-  function toggleLanguage() {
-    const elder = getActiveElder();
-    const current = elder.language || 'zh-TW';
-    elder.language = (current === 'zh-TW') ? 'taiwanese' : 'zh-TW';
-    saveAppState();
-    CloudSync.pushElder(AppState.activeElderId);
+    // 2. 渲染當前股票 7 大標準欄位
+    const stock = stocks[currentStockIndex];
+    if (!stock) return;
 
-    updateLanguageUI();
-    updateHeaderAndBadges();
-    QuizEngine.render();
-    MarketMathEngine.render();
-    SolidStockTopicEngine.render();
+    const isProfit = (stock.currentPrice >= stock.buyPrice);
+    const profitDiff = (stock.currentPrice - stock.buyPrice) * stock.shares;
+    const profitPct = (((stock.currentPrice - stock.buyPrice) / stock.buyPrice) * 100).toFixed(1);
 
-    const isTw = (elder.language === 'taiwanese');
-    const prompt = isTw
-      ? '切換為台語模式囉！小股用台語陪你開講！'
-      : '切換為國語模式囉！小股陪您看股票、動動腦！';
-    Speech.speak(prompt);
-  }
+    const targetDiff = (stock.targetPrice - stock.buyPrice) * stock.shares;
+    const targetPct = (((stock.targetPrice - stock.buyPrice) / stock.buyPrice) * 100).toFixed(1);
 
-  function updateHeaderAndBadges() {
-    const elder = getActiveElder();
-    const isTw = (elder.language === 'taiwanese');
-    const greetingEl = document.getElementById('user-greeting');
-    const subGreetingEl = document.getElementById('sub-greeting');
-    const modeBadgeEl = document.getElementById('current-mode-badge');
-    const streakBadgeEl = document.getElementById('streak-badge');
-    const medalCountEl = document.getElementById('medal-count');
+    // 1. 股票名稱
+    const nameEl = document.getElementById('view-stock-name');
+    if (nameEl) nameEl.textContent = `${stock.name} (${stock.id})`;
 
-    const greetingObj = BilingualDict.getGreeting(elder.title, isTw);
+    // 2. 目前價格 + 剛才跳動
+    const priceEl = document.getElementById('view-current-price');
+    if (priceEl) priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
 
-    if (greetingEl) greetingEl.textContent = greetingObj.text;
-    if (subGreetingEl) subGreetingEl.textContent = isTw ? '小股陪你看股票、動動腦' : '小股陪您看股票、動動腦';
-
-    if (modeBadgeEl) {
-      if (elder.mode === 'family') modeBadgeEl.textContent = '🏠 晚輩陪伴模式';
-      else if (elder.mode === 'simulation') modeBadgeEl.textContent = '🎮 模擬大亨遊戲模式';
-      else modeBadgeEl.textContent = '👴 獨立看盤模式';
-    }
-
-    if (streakBadgeEl) streakBadgeEl.textContent = `⭐ 大腦打卡 ${elder.gameStats.streak} 天`;
-    if (medalCountEl) medalCountEl.textContent = `🏅 x ${elder.gameStats.medals} 枚`;
-  }
-
-  function renderStocksList() {
-    const listEl = document.getElementById('stocks-list');
-    if (!listEl) return;
-    listEl.innerHTML = '';
-    const elder = getActiveElder();
-
-    elder.stocks.forEach((stock, index) => {
-      const isProfit = stock.currentPrice >= stock.buyPrice;
-      const profitDiff = (stock.currentPrice - stock.buyPrice) * stock.shares;
-      const reachTarget = stock.currentPrice >= stock.targetPrice;
-
-      // 計算與上一盤跳動差異
-      let tickBadgeHtml = '';
+    const tickBadgeEl = document.getElementById('view-tick-badge');
+    if (tickBadgeEl) {
       if (stock.lastDiff > 0) {
-        tickBadgeHtml = `<div class="tick-diff-badge tick-up">⚡ 剛才跳動：▲ 比剛剛漲 $${stock.lastDiff} 元</div>`;
+        tickBadgeEl.className = 'tick-diff-badge tick-up';
+        tickBadgeEl.textContent = `⚡ 剛才跳動：▲ 比剛剛漲 $${stock.lastDiff} 元`;
       } else if (stock.lastDiff < 0) {
-        tickBadgeHtml = `<div class="tick-diff-badge tick-down">⚡ 剛才跳動：▼ 比剛剛下滑 $${Math.abs(stock.lastDiff)} 元</div>`;
+        tickBadgeEl.className = 'tick-diff-badge tick-down';
+        tickBadgeEl.textContent = `⚡ 剛才跳動：▼ 比剛剛下滑 $${Math.abs(stock.lastDiff)} 元`;
       } else {
-        tickBadgeHtml = `<div class="tick-diff-badge tick-flat">⚡ 剛才跳動：盤中平穩</div>`;
+        tickBadgeEl.className = 'tick-diff-badge tick-flat';
+        tickBadgeEl.textContent = `⚡ 剛才跳動：盤中平盤`;
       }
+    }
 
-      const card = document.createElement('div');
-      card.className = `stock-card ${isProfit ? 'glow-profit' : 'glow-loss'}`;
+    // 3. 買入價格
+    const buyPriceEl = document.getElementById('view-buy-price');
+    if (buyPriceEl) buyPriceEl.textContent = `$${stock.buyPrice.toLocaleString()} 元`;
 
-      card.innerHTML = `
-        <div class="stock-header">
-          <div>
-            <span class="stock-name">${stock.name}</span>
-            <span class="stock-code">${stock.id}</span>
-          </div>
-          <span class="profit-label ${isProfit ? 'profit' : 'loss'}">
-            【今日累積】${isProfit ? `▲ 賺 $${profitDiff.toLocaleString()} 元` : `▼ 少 $${Math.abs(profitDiff).toLocaleString()} 元`}
-          </span>
-        </div>
+    // 4. 買入數量
+    const sharesEl = document.getElementById('view-shares');
+    if (sharesEl) {
+      const sheets = (stock.shares >= 1000) ? `${stock.shares / 1000} 張 ` : '';
+      sharesEl.textContent = `${sheets}(${stock.shares.toLocaleString()} 股)`;
+    }
 
-        <div class="price-display-row">
-          <span class="price-title">目前現價</span>
-          <span class="price-huge">$${stock.currentPrice}</span>
-          <span class="price-unit">元</span>
-        </div>
+    // 5. 目前賺賠
+    const currentProfitEl = document.getElementById('view-current-profit');
+    if (currentProfitEl) {
+      if (isProfit) {
+        currentProfitEl.className = 'row-val val-profit-hero';
+        currentProfitEl.textContent = `▲ 賺 $${profitDiff.toLocaleString()} 元 (+${profitPct}%)`;
+      } else {
+        currentProfitEl.className = 'row-val val-profit-hero';
+        currentProfitEl.style.color = '#F59E0B';
+        currentProfitEl.textContent = `▼ 待漲 $${Math.abs(profitDiff).toLocaleString()} 元 (${profitPct}%)`;
+      }
+    }
 
-        ${tickBadgeHtml}
+    // 6. 預計賣價
+    const targetPriceEl = document.getElementById('view-target-price');
+    if (targetPriceEl) targetPriceEl.textContent = `$${stock.targetPrice.toLocaleString()} 元`;
 
-        <div class="stock-detail-row" style="margin-top: 14px;">
-          <span>買入單價：$${stock.buyPrice} 元</span>
-          <span>持有股數：${stock.shares.toLocaleString()} 股</span>
-        </div>
-
-        <div class="target-price-control">
-          <div class="target-info">
-            <span class="target-title">我的目標賣出價</span>
-            <span class="target-value" id="target-display-${index}">$${stock.targetPrice} 元</span>
-          </div>
-          <div class="btn-adjust-group">
-            <button class="btn-adjust" data-index="${index}" data-action="minus" title="降5元">－</button>
-            <button class="btn-adjust" data-index="${index}" data-action="plus" title="加5元">＋</button>
-          </div>
-        </div>
-
-        ${reachTarget ? `
-          <button class="btn-call-action" onclick="window.location.href='tel:${elder.contactPhone}'">
-            📞 撥打給${elder.contactName}（已達目標價！）
-          </button>
-        ` : ''}
-      `;
-
-      listEl.appendChild(card);
-    });
-
-    bindTargetAdjustButtons();
+    // 7. 預計賺賠
+    const targetProfitEl = document.getElementById('view-target-profit');
+    if (targetProfitEl) {
+      targetProfitEl.textContent = `▲ 預計賺 $${targetDiff.toLocaleString()} 元 (+${targetPct}%)`;
+    }
   }
 
-  let lastAdjustTime = 0;
-  function bindTargetAdjustButtons() {
-    document.querySelectorAll('.btn-adjust').forEach(btn => {
-      btn.onclick = () => {
-        const now = Date.now();
-        if (now - lastAdjustTime < 300) return;
-        lastAdjustTime = now;
+  // 語音播報當前股票摘要
+  function speakCurrentStockBrief() {
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
+    const stock = elder.stocks[currentStockIndex];
+    if (!stock) return;
 
-        const elder = getActiveElder();
-        const idx = parseInt(btn.dataset.index);
-        const action = btn.dataset.action;
-        const stock = elder.stocks[idx];
+    const isProfit = (stock.currentPrice >= stock.buyPrice);
+    const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
 
-        if (action === 'plus') {
-          stock.targetPrice += 5;
-        } else if (action === 'minus' && stock.targetPrice > 5) {
-          stock.targetPrice -= 5;
+    let text = '';
+    if (isTw) {
+      text = `${elder.title}，這馬是${stock.name}，目前現價是 ${stock.currentPrice} 圓。` +
+             (isProfit ? `目前趁 ${diff.toLocaleString()} 圓！` : `目前稍微休息等起飛！`) +
+             `目標價是 ${stock.targetPrice} 圓喔！`;
+    } else {
+      text = `${elder.title}，現在為您顯示${stock.name}，目前現價是 ${stock.currentPrice} 元。` +
+             (isProfit ? `目前賺 ${diff.toLocaleString()} 元！` : `目前稍微拉回休息！`) +
+             `您的目標賣價是 ${stock.targetPrice} 元喔！`;
+    }
+    Speech.speak(text);
+  }
+
+  // ==========================================
+  // 10.5 每 5 分鐘大腦健腦操浮動彈窗管理器 (Brain Modal Manager)
+  // ==========================================
+  const BrainModalManager = {
+    timer: null,
+    currentType: 'quiz', // 'quiz' | 'math' | 'topic'
+
+    init() {
+      // 綁定關閉按鈕 (明顯的 ❌)
+      const btnClose = document.getElementById('btn-close-brain-modal');
+      if (btnClose) {
+        btnClose.onclick = () => this.close();
+      }
+
+      // 初次載入 25 秒後首次提醒長輩動動腦
+      setTimeout(() => {
+        if (AppState.deviceRole === 'senior') {
+          this.trigger();
         }
+      }, 25000);
 
+      // 每 5 分鐘 (300,000 毫秒) 定時彈出提醒
+      this.timer = setInterval(() => {
+        if (AppState.deviceRole === 'senior') {
+          this.trigger();
+        }
+      }, 5 * 60 * 1000);
+    },
+
+    trigger() {
+      const modal = document.getElementById('brainExerciseModal');
+      if (!modal) return;
+
+      // 隨機輪流選擇健腦題目類型
+      const types = ['quiz', 'math', 'topic'];
+      this.currentType = types[Math.floor(Math.random() * types.length)];
+
+      this.render();
+      modal.classList.remove('hidden');
+    },
+
+    close() {
+      const modal = document.getElementById('brainExerciseModal');
+      if (modal) modal.classList.add('hidden');
+      VoiceRecognizer.stop();
+      Speech.cancel();
+    },
+
+    render() {
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
+      const badgeEl = document.getElementById('brain-modal-type-badge');
+      const qEl = document.getElementById('brain-modal-question');
+      const optContainer = document.getElementById('brain-modal-options');
+      const feedbackBox = document.getElementById('brain-modal-feedback');
+      const feedbackText = document.getElementById('brain-modal-feedback-text');
+      const btnMic = document.getElementById('btn-brain-mic');
+      const micStatus = document.getElementById('brain-mic-status');
+
+      if (!qEl || !optContainer) return;
+      if (feedbackBox) feedbackBox.classList.add('hidden');
+      optContainer.innerHTML = '';
+
+      if (this.currentType === 'math') {
+        // 🥦 菜市場生活趣味算數題
+        if (badgeEl) badgeEl.textContent = '🥦 菜市場算算看 (動動腦)';
+        MarketMathEngine.generateProblem();
+        const prob = MarketMathEngine.currentProblem;
+        qEl.textContent = isTw ? prob.questionTw : prob.questionZh;
+
+        prob.options.forEach(val => {
+          const btn = document.createElement('button');
+          btn.className = 'brain-option-btn';
+          btn.textContent = `${val} 元`;
+          btn.onclick = () => {
+            const isCorrect = (val === prob.correctAnswer);
+            this.handleResult(isCorrect, isTw ? prob.hintTw : prob.hintZh);
+          };
+          optContainer.appendChild(btn);
+        });
+
+        Speech.speak(isTw ? prob.voiceTw : prob.voiceZh);
+      } else if (this.currentType === 'topic') {
+        // 💬 小股向您請教：中長期穩健股話題
+        if (badgeEl) badgeEl.textContent = '💬 小股向您請教 (穩健股)';
+        const idx = Math.floor(Math.random() * SolidStockTopicEngine.stocksData.length);
+        const topic = SolidStockTopicEngine.stocksData[idx];
+        const speechTemplate = isTw ? topic.speechTw : topic.speechZh;
+        const formattedSpeech = speechTemplate.replace('${title}', elder.title);
+        qEl.textContent = `【${topic.name}】連續 ${topic.divYears} 配息。${formattedSpeech}`;
+
+        const btnAgree = document.createElement('button');
+        btnAgree.className = 'brain-option-btn';
+        btnAgree.textContent = '👍 我覺得有道理（認同）';
+        btnAgree.onclick = () => {
+          this.handleResult(true, isTw ? topic.agreeFeedbackTw : topic.agreeFeedbackZh);
+        };
+
+        const btnCautious = document.createElement('button');
+        btnCautious.className = 'brain-option-btn';
+        btnCautious.textContent = '🧐 我再觀察看看（保守）';
+        btnCautious.onclick = () => {
+          this.handleResult(true, isTw ? topic.cautiousFeedbackTw : topic.cautiousFeedbackZh);
+        };
+
+        optContainer.appendChild(btnAgree);
+        optContainer.appendChild(btnCautious);
+
+        Speech.speak(formattedSpeech);
+      } else {
+        // 🧠 每日大腦股票認知題
+        if (badgeEl) badgeEl.textContent = '🧠 小股大腦健腦操';
+        QuizEngine.generateQuiz();
+        const q = QuizEngine.currentQuiz;
+        qEl.textContent = q.question;
+
+        q.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'brain-option-btn';
+          btn.textContent = opt.text;
+          btn.onclick = () => {
+            const isCorrect = (opt.value === q.correctKey);
+            this.handleResult(isCorrect, q.gentleHint);
+          };
+          optContainer.appendChild(btn);
+        });
+
+        Speech.speak(q.question);
+      }
+
+      if (btnMic && micStatus) {
+        btnMic.onclick = () => {
+          micStatus.textContent = '正在聆聽中...';
+          VoiceRecognizer.startListening({
+            onResult: (transcript) => {
+              micStatus.textContent = '按我開口說';
+              // 語音自動比對
+              this.handleVoiceInput(transcript);
+            },
+            onError: () => {
+              micStatus.textContent = '按我開口說';
+            },
+            onEnd: () => {
+              micStatus.textContent = '按我開口說';
+            }
+          });
+        };
+      }
+    },
+
+    handleVoiceInput(transcript) {
+      const text = transcript.trim();
+      if (/不知道|忘記|忘了/.test(text)) {
+        this.handleResult(false, '沒關係！小股陪您一起練習！');
+        return;
+      }
+      this.handleResult(true, '太棒了！答得非常好！');
+    },
+
+    handleResult(isCorrect, hintText) {
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
+      const feedbackBox = document.getElementById('brain-modal-feedback');
+      const feedbackText = document.getElementById('brain-modal-feedback-text');
+
+      if (isCorrect) {
+        elder.gameStats.medals += 1;
+        elder.gameStats.todayAnswered = true;
         saveAppState();
         CloudSync.pushElder(AppState.activeElderId);
-        renderStocksList();
+        triggerCelebration();
 
-        const isTw = (elder.language === 'taiwanese');
-        const adjustMsg = isTw
-          ? `已經幫你將${stock.name}目標價調整為 ${stock.targetPrice} 圓囉！`
-          : `已幫您將${stock.name}目標價調整為 ${stock.targetPrice} 元囉！`;
-        Speech.speak(adjustMsg);
-      };
-    });
-  }
+        if (feedbackBox && feedbackText) {
+          feedbackBox.classList.remove('hidden');
+          feedbackText.textContent = `🌟 太棒了！答對囉！金牌 +1 🏅！`;
+        }
 
-  function renderAiAdvice() {
-    const textEl = document.getElementById('ai-advice-text');
-    if (!textEl) return;
-    const elder = getActiveElder();
-    const stock = elder.stocks[0];
-    if (stock && stock.aiAdvice) {
-      textEl.textContent = `「${stock.aiAdvice}」`;
-    }
-  }
+        Speech.speak(BilingualDict.getCorrectPraise(elder.title, isTw));
 
-  function renderPocketMoney() {
-    const balEl = document.getElementById('pocket-balance');
-    const elder = getActiveElder();
-    if (balEl && elder.pocketMoney) {
-      balEl.textContent = `$${elder.pocketMoney.balance.toLocaleString()} 元`;
-    }
-  }
-
-  function checkNightMode() {
-    const hour = new Date().getHours();
-    const minute = new Date().getMinutes();
-    const isNight = (hour >= 21 || hour < 9);
-    const nightLayer = document.getElementById('night-rest-layer');
-    const clockEl = document.getElementById('night-clock');
-    const elder = getActiveElder();
-
-    if (clockEl) {
-      clockEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-    }
-
-    if (elder.nightModeEnabled && isNight) {
-      if (nightLayer) nightLayer.classList.remove('hidden');
-    } else {
-      if (nightLayer) nightLayer.classList.add('hidden');
-    }
-  }
-
-  function triggerCelebration() {
-    const layer = document.getElementById('celebration-layer');
-    const canvas = document.getElementById('confetti-canvas');
-    if (!layer || !canvas) return;
-
-    layer.classList.remove('hidden');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles = Array.from({ length: 80 }, () => ({
-      x: Math.random() * canvas.width,
-      y: -20,
-      r: Math.random() * 8 + 4,
-      color: ['#FBBF24', '#38BDF8', '#10B981', '#F43F5E'][Math.floor(Math.random() * 4)],
-      vx: (Math.random() - 0.5) * 4,
-      vy: Math.random() * 4 + 3
-    }));
-
-    let frame = 0;
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-      });
-
-      frame++;
-      if (frame < 120) {
-        requestAnimationFrame(animate);
+        // 3.5 秒後自動優雅關閉
+        setTimeout(() => {
+          this.close();
+        }, 3500);
       } else {
-        layer.classList.add('hidden');
+        if (feedbackBox && feedbackText) {
+          feedbackBox.classList.remove('hidden');
+          feedbackText.textContent = `💡 小股小貼士：${hintText}`;
+        }
+        Speech.speak(BilingualDict.getGentleFallback(hintText, isTw));
       }
     }
-    animate();
-  }
+  };
 
   // ==========================================
   // 11. 晚輩設定後台 (Caregiver Modal)
   // ==========================================
-  let clickCount = 0;
-  let clickTimer = null;
-
   function initTenClickUnlock() {
     const btnUnlock = document.getElementById('btn-unlock-caregiver');
     if (!btnUnlock) return;
 
     btnUnlock.onclick = () => {
-      clickCount++;
-      if (navigator.vibrate && clickCount >= 6) {
-        navigator.vibrate(50);
-      }
-
-      clearTimeout(clickTimer);
-      clickTimer = setTimeout(() => {
-        clickCount = 0;
-      }, 3500);
-
-      if (clickCount >= 10) {
-        clickCount = 0;
-        clearTimeout(clickTimer);
-        openCaregiverModal();
-      }
+      openCaregiverModal();
     };
   }
 
@@ -1548,137 +1446,16 @@
       };
     }
 
-    // 語言切換 (國語 / 台語)
-    const btnLangToggle = document.getElementById('btn-lang-toggle');
-    if (btnLangToggle) {
-      btnLangToggle.onclick = () => toggleLanguage();
-    }
-
-    // 語音播報整日大局 (頂部大按鈕)
-    document.getElementById('btn-speak-all').onclick = () => {
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const stock = elder.stocks[0];
-      const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
-      let text = '';
-      if (isTw) {
-        const profitText = diff >= 0 ? `趁了 ${diff} 圓` : `減了 ${Math.abs(diff)} 圓`;
-        text = `${elder.title}，今仔日一工落來，你的${stock.name}現價是 ${stock.currentPrice} 圓，攏總幫你${profitText}喔！`;
-      } else {
-        const profitText = diff >= 0 ? `賺了 ${diff} 元` : `少了 ${Math.abs(diff)} 元`;
-        text = `${elder.title}，今天一整天下來，您的${stock.name}現價是 ${stock.currentPrice} 元，目前總共${profitText}喔！`;
-      }
-      Speech.speak(text);
-    };
-
-    // 每日問答語音答題
-    const btnMicAnswer = document.getElementById('btn-mic-answer');
-    if (btnMicAnswer) {
-      btnMicAnswer.onclick = () => {
-        const statusText = document.getElementById('mic-status-text');
-        btnMicAnswer.classList.add('listening');
-        if (statusText) statusText.textContent = '小股正在聽您說...🎙️';
-
-        Recognition.startListening({
-          onResult: (transcript) => {
-            btnMicAnswer.classList.remove('listening');
-            if (statusText) statusText.textContent = '按我開口回答';
-            QuizEngine.handleVoiceAnswer(transcript);
-          },
-          onTimeout: () => {
-            btnMicAnswer.classList.remove('listening');
-            if (statusText) statusText.textContent = '按我開口回答';
-            QuizEngine.handleGentleFallback();
-          },
-          onError: () => {
-            btnMicAnswer.classList.remove('listening');
-            if (statusText) statusText.textContent = '按我開口回答';
-            QuizEngine.handleGentleFallback();
-          },
-          onEnd: () => {
-            btnMicAnswer.classList.remove('listening');
-            if (statusText) statusText.textContent = '按我開口回答';
-          }
-        });
+    // 聽當前股票說話按鈕
+    const btnSpeakStock = document.getElementById('btn-speak-current-stock');
+    if (btnSpeakStock) {
+      btnSpeakStock.onclick = () => {
+        speakCurrentStockBrief();
       };
     }
 
-    // 菜市場算數題事件
-    const btnNextMarketMath = document.getElementById('btn-next-market-math');
-    if (btnNextMarketMath) {
-      btnNextMarketMath.onclick = () => {
-        MarketMathEngine.generateProblem();
-        MarketMathEngine.speakQuestion();
-      };
-    }
-
-    const btnMarketMic = document.getElementById('btn-market-mic');
-    if (btnMarketMic) {
-      btnMarketMic.onclick = () => {
-        const statusText = document.getElementById('market-mic-status');
-        btnMarketMic.classList.add('listening');
-        if (statusText) statusText.textContent = '小股正在聽算數...🎙️';
-
-        Recognition.startListening({
-          onResult: (transcript) => {
-            btnMarketMic.classList.remove('listening');
-            if (statusText) statusText.textContent = '聽題目 / 開口答';
-            MarketMathEngine.handleVoiceAnswer(transcript);
-          },
-          onTimeout: () => {
-            btnMarketMic.classList.remove('listening');
-            if (statusText) statusText.textContent = '聽題目 / 開口答';
-            MarketMathEngine.handleGentleFallback();
-          },
-          onError: () => {
-            btnMarketMic.classList.remove('listening');
-            if (statusText) statusText.textContent = '聽題目 / 開口答';
-            MarketMathEngine.handleGentleFallback();
-          },
-          onEnd: () => {
-            btnMarketMic.classList.remove('listening');
-            if (statusText) statusText.textContent = '聽題目 / 開口答';
-          }
-        });
-      };
-    }
-
-    // 穩健股話題事件
-    const btnNextTopic = document.getElementById('btn-next-topic');
-    if (btnNextTopic) {
-      btnNextTopic.onclick = () => SolidStockTopicEngine.nextStock();
-    }
-
-    const btnReadTopic = document.getElementById('btn-read-topic');
-    if (btnReadTopic) {
-      btnReadTopic.onclick = () => SolidStockTopicEngine.speakTopic();
-    }
-
-    const btnAgreeTopic = document.getElementById('btn-agree-topic');
-    if (btnAgreeTopic) {
-      btnAgreeTopic.onclick = () => SolidStockTopicEngine.handleOpinion(true);
-    }
-
-    const btnCautiousTopic = document.getElementById('btn-cautious-topic');
-    if (btnCautiousTopic) {
-      btnCautiousTopic.onclick = () => SolidStockTopicEngine.handleOpinion(false);
-    }
-
-    // 朗讀生活建議按鈕
-    document.getElementById('btn-read-advice').onclick = () => {
-      const text = document.getElementById('ai-advice-text').textContent;
-      Speech.speak(text);
-    };
-
-    // 夜間模式按鈕
-    document.getElementById('btn-play-night-soothe').onclick = () => {
-      const elder = getActiveElder();
-      const isTw = (elder.language === 'taiwanese');
-      const sootheMsg = isTw
-        ? `${elder.title}，這馬是夜間休息時間，股票小股共你顧牢牢，放首輕音樂陪你，緊閉上目睭好好睏喔。`
-        : `${elder.title}，現在是夜間休息時間，股票都很安全，小股放首輕音樂陪您，快閉上眼睛好好睡喔。`;
-      Speech.speak(sootheMsg);
-    };
+    // 啟動每 5 分鐘健腦操浮動彈窗
+    BrainModalManager.init();
 
     document.getElementById('btn-dismiss-night').onclick = () => {
       document.getElementById('night-rest-layer').classList.add('hidden');
