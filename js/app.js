@@ -24,7 +24,6 @@
       if (window.navigator && window.navigator.standalone === true) return true;
       if (document.referrer && document.referrer.indexOf('android-app://') === 0) return true;
       if (window.location.search && (window.location.search.indexOf('source=pwa') !== -1 || window.location.search.indexOf('mode=standalone') !== -1)) return true;
-      if (localStorage.getItem('xiaogu_pwa_installed') === 'true') return true;
     } catch(e) {}
     return false;
   }
@@ -52,30 +51,20 @@
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     window.deferredPrompt = e;
+    // 瀏覽器觸發了可安裝事件，代表目前未安裝，解除獨立App遮罩並顯示按鈕
+    localStorage.removeItem('xiaogu_pwa_installed');
+    document.documentElement.classList.remove('is-pwa-standalone');
     const btn = document.getElementById('btn-header-install');
-    if (btn && !checkIsStandalone()) btn.classList.remove('hidden');
+    if (btn) btn.classList.remove('hidden');
   });
 
   window.addEventListener('appinstalled', () => {
-    localStorage.setItem('xiaogu_pwa_installed', 'true');
     document.documentElement.classList.add('is-pwa-standalone');
     const btn = document.getElementById('btn-header-install');
     if (btn) btn.classList.add('hidden');
     window.deferredPrompt = null;
-    console.log('小股同學 PWA 安裝成功！已永久標記為已安裝');
+    console.log('小股同學 PWA 安裝成功！');
   });
-
-  // 異步查詢 Chrome / Android 相關已安裝 App
-  if ('getInstalledRelatedApps' in navigator) {
-    navigator.getInstalledRelatedApps().then(apps => {
-      if (apps && apps.length > 0) {
-        localStorage.setItem('xiaogu_pwa_installed', 'true');
-        document.documentElement.classList.add('is-pwa-standalone');
-        const btn = document.getElementById('btn-header-install');
-        if (btn) btn.classList.add('hidden');
-      }
-    }).catch(() => {});
-  }
 
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
@@ -2243,7 +2232,7 @@
 
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.32')
+      navigator.serviceWorker.register('sw.js?v=1.33')
         .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }

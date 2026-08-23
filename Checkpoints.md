@@ -8,6 +8,7 @@
 
 | 版本號 | 快照時間 | 類型 | 核心異動與摘要 | Git Tag |
 | :--- | :--- | :--- | :--- | :--- |
+| **v1.33** | 2026-08-23 23:12 | 移除殘留 LocalStorage 限制與即時解除遮罩 (Dynamic Re-Install Restoration) | 徹底拔除 LocalStorage 安裝狀態靜態綁架，改採 100% 真實即時環境檢測；當 App 遭使用者卸載後再次於 Chrome 中開啟時，`beforeinstallprompt` 立即清除過期標籤並解除遮罩，使頂端列「📲 安裝App」即時重新復現；升級版本至 `v1.33` | `v1.33` |
 | **v1.32** | 2026-08-23 23:05 | 雙重獨立 App 狀態檢測與安裝按鈕永久隱藏 (Robust Standalone Detection & Auto-Hide) | 建立 7 重 PWA 獨立 App 狀態檢測（display-mode / referrer / source=pwa / localStorage 標記 / getInstalledRelatedApps 異動查詢）；於 HTML 渲染前加入極速 `<script>` 注入 `.is-pwa-standalone` CSS 規則，確保安裝完成後由桌面開啟或 LINE 跳轉開啟 App 時，頂端列「📲 安裝App」100% 隱藏不復現；升級全站快取至 `v1.32` | `v1.32` |
 | **v1.31** | 2026-08-23 22:38 | 頂端列安裝按鈕常駐與事件提早註冊 (Persistent Header Install & Early Event Hook) | 拔除頂端列「📲 安裝App」預設 hidden，在所有主流瀏覽器（Chrome/Safari/Edge）常駐顯示；將 `beforeinstallprompt` 提升至最外層立即監聽避免漏接；若為已安裝的獨立 App 模式 (Standalone) 則自動隱藏避免佔位；升級至 `v1.31` | `v1.31` |
 | **v1.30** | 2026-08-23 21:58 | PWA 一鍵安裝與 LINE 逃脫標準化 (Header Install & LINE Escape) | 完整移植《1到50遊戲》標準 PWA 與 LINE 跳脫機制；按鈕純淨收斂至頂端列（命名為「📲 安裝App」，移除底部與橫幅贅字）；開機即時攔截 LINE 內嵌瀏覽器並以 `?openExternalBrowser=1` 自動逃脫至 Chrome/Safari，附帶全螢幕圖文防呆導引；支援 Android 原生 `beforeinstallprompt` 一鍵彈出安裝與 iOS Safari 圖文導引；升級 ServiceWorker 與資源快取至 `v1.30` | `v1.30` |
