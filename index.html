@@ -80,170 +80,272 @@
   <!-- 主內容容器 -->
   <main class="main-container">
 
-    <!-- 模式標籤 (真實資產 / 模擬大亨 / 獨立看盤) -->
-    <div class="mode-badge-container">
-      <span id="current-mode-badge" class="mode-badge">🏠 晚輩陪伴模式</span>
-      <span id="streak-badge" class="streak-badge">⭐ 大腦打卡 3 天</span>
+    <!-- ========================================== -->
+    <!-- A. 長輩專屬視圖 (Senior View Container) -->
+    <!-- ========================================== -->
+    <div id="senior-view-container" class="view-container">
+
+      <!-- 模式標籤 (真實資產 / 模擬大亨 / 獨立看盤) -->
+      <div class="mode-badge-container">
+        <span id="current-mode-badge" class="mode-badge">🏠 晚輩陪伴模式</span>
+        <span id="streak-badge" class="streak-badge">⭐ 大腦打卡 3 天</span>
+      </div>
+
+      <!-- 1. 股票卡片清單區 (最多 3 檔) -->
+      <section class="stocks-section" aria-label="我的自選股票">
+        <h2 class="section-title">📊 我的股票看板</h2>
+        <div id="stocks-list" class="stocks-grid">
+          <!-- 動態渲染股票卡片 -->
+        </div>
+      </section>
+
+      <!-- 2. 每日大腦認知問答卡片 -->
+      <section class="quiz-section" aria-label="每日認知問答">
+        <div class="card card-quiz">
+          <div class="quiz-header">
+            <span class="quiz-tag">🧠 每日大腦健腦操</span>
+            <span id="medal-count" class="medal-count">🏅 x 12 枚</span>
+          </div>
+          
+          <h3 id="quiz-question" class="quiz-question-text">
+            載入題目中...
+          </h3>
+
+          <!-- 雙軌答題區：語音辨識 + 超大選項卡片 -->
+          <div class="quiz-interactive-zone">
+            <!-- 語音聆聽按鈕 -->
+            <button id="btn-mic-answer" class="btn-mic" title="點擊說出答案">
+              <span class="mic-icon">🎙️</span>
+              <span id="mic-status-text" class="mic-status">按我開口回答</span>
+            </button>
+
+            <!-- 2~3 個超大選項按鈕 -->
+            <div id="quiz-options-container" class="quiz-options-grid">
+              <!-- 動態產生按鈕 -->
+            </div>
+          </div>
+
+          <!-- 小股溫情回饋提示 -->
+          <div id="quiz-feedback" class="quiz-feedback-box hidden">
+            <p id="quiz-feedback-text"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2.5 🥦 菜市場生活趣味算數題 (打發時間、等候開盤隨玩) -->
+      <section class="market-math-section" aria-label="菜市場算算看">
+        <div class="card card-market">
+          <div class="market-header">
+            <div class="market-title-group">
+              <span class="market-tag">🥦 菜市場買菜算算看</span>
+              <span class="market-sub-tag">隨玩打發時間．鍛鍊算數</span>
+            </div>
+            <button id="btn-next-market-math" class="btn-refresh-small" title="換一題算算看">🔄 換一題</button>
+          </div>
+
+          <h3 id="market-question" class="market-question-text">
+            一把青江菜 20 元，一顆高麗菜 45 元，兩樣買起來總共多少錢？
+          </h3>
+
+          <div class="market-interactive-zone">
+            <button id="btn-market-mic" class="btn-mic btn-mic-market" title="按我開口算">
+              <span class="mic-icon">🎙️</span>
+              <span id="market-mic-status" class="mic-status">聽題目 / 開口答</span>
+            </button>
+
+            <div id="market-options-container" class="quiz-options-grid">
+              <!-- 動態生成買菜選項 -->
+            </div>
+          </div>
+
+          <div id="market-feedback" class="quiz-feedback-box hidden">
+            <p id="market-feedback-text"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 💬 小股向您請教：中長期穩健股話題 (基於客觀數據，向長輩請教經驗) -->
+      <section class="stock-topic-section" aria-label="中長期穩健股話題">
+        <div class="card card-topic">
+          <div class="topic-header">
+            <div class="topic-title-group">
+              <span class="topic-tag">💬 小股向您請教</span>
+              <span class="topic-sub-tag">中長期穩健股話題．非短線炒作</span>
+            </div>
+            <button id="btn-next-topic" class="btn-refresh-small" title="換個股票聊聊">🔄 換一檔聊聊</button>
+          </div>
+
+          <div class="topic-body">
+            <div class="topic-stock-info">
+              <div class="topic-stock-title">
+                <span id="topic-stock-name" class="topic-name">中華電 (2412)</span>
+                <span id="topic-badge-type" class="topic-badge-type">電信龍頭．防禦首選</span>
+              </div>
+
+              <div class="topic-metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">近5年平均殖利率</span>
+                  <span id="topic-yield" class="metric-value">約 4.2%</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">連續配息紀錄</span>
+                  <span id="topic-div-years" class="metric-value">連續 26 年</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">抗跌與波動評級</span>
+                  <span id="topic-stability" class="metric-value">⭐⭐⭐⭐⭐ 極高</span>
+                </div>
+              </div>
+
+              <div class="topic-dialogue-box">
+                <p id="topic-speech-text" class="topic-speech">
+                  「伯伯，小股最近做功課，覺得中華電信長期配息穩定，遇到市場震盪也很抗跌，很適合作為中長期領股利的防守資產。您在股市經驗豐富，您覺得小股的看法怎麼樣呢？」
+                </p>
+                <button id="btn-read-topic" class="btn-sound-small" title="聽小股請教">🔊 聽小股說</button>
+              </div>
+
+              <!-- 長輩反饋意見按鈕區 -->
+              <div class="topic-opinion-zone">
+                <p class="opinion-prompt">👇 您覺得小股的看法如何呢？</p>
+                <div class="opinion-btn-group">
+                  <button id="btn-agree-topic" class="btn-opinion btn-agree">
+                    👍 我覺得有道理（認同）
+                  </button>
+                  <button id="btn-cautious-topic" class="btn-opinion btn-cautious">
+                    🧐 我再觀察看看（保守）
+                  </button>
+                </div>
+              </div>
+
+              <!-- 小股回饋回應 -->
+              <div id="topic-feedback-box" class="topic-feedback-box hidden">
+                <p id="topic-feedback-text"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. AI 溫情口語建議卡片 -->
+      <section class="ai-advice-section" aria-label="小股溫馨建議">
+        <div class="card card-advice">
+          <div class="advice-header">
+            <span class="advice-tag">💡 小股生活貼心話</span>
+            <button id="btn-read-advice" class="btn-sound-small" title="朗讀建議">🔊 聽建議</button>
+          </div>
+          <p id="ai-advice-text" class="advice-text">
+            「伯伯，今天天氣不錯，台積電走勢也很平穩，我們放寬心，多喝溫開水、出門散散步喔！」
+          </p>
+        </div>
+      </section>
+
+      <!-- 5. 孝親零用金 / 收到紅包紀錄 -->
+      <section class="pocket-money-section" aria-label="孝親零用金">
+        <div class="card card-pocket">
+          <div class="pocket-header">
+            <span class="pocket-title">🧧 我的孝親零用金</span>
+            <span id="pocket-balance" class="pocket-balance">$15,000 元</span>
+          </div>
+          <p class="pocket-sub">晚輩心意與分紅回饋，安心存在口袋裡！</p>
+        </div>
+      </section>
+
     </div>
 
-    <!-- 1. 股票卡片清單區 (最多 3 檔) -->
-    <section class="stocks-section" aria-label="我的自選股票">
-      <h2 class="section-title">📊 我的股票看板</h2>
-      <div id="stocks-list" class="stocks-grid">
-        <!-- 動態渲染股票卡片 -->
-      </div>
-    </section>
+    <!-- ========================================== -->
+    <!-- B. 晚輩專屬 1 對 2 關懷儀表板 (Caregiver View Container) -->
+    <!-- ========================================== -->
+    <div id="caregiver-view-container" class="view-container hidden">
 
-    <!-- 2. 每日大腦認知問答卡片 -->
-    <section class="quiz-section" aria-label="每日認知問答">
-      <div class="card card-quiz">
-        <div class="quiz-header">
-          <span class="quiz-tag">🧠 每日大腦健腦操</span>
-          <span id="medal-count" class="medal-count">🏅 x 12 枚</span>
-        </div>
-        
-        <h3 id="quiz-question" class="quiz-question-text">
-          載入題目中...
-        </h3>
-
-        <!-- 雙軌答題區：語音辨識 + 超大選項卡片 -->
-        <div class="quiz-interactive-zone">
-          <!-- 語音聆聽按鈕 -->
-          <button id="btn-mic-answer" class="btn-mic" title="點擊說出答案">
-            <span class="mic-icon">🎙️</span>
-            <span id="mic-status-text" class="mic-status">按我開口回答</span>
+      <!-- 晚輩頂部長輩切換標籤 (1 對 2 爸爸/媽媽) -->
+      <div class="caregiver-elder-switcher">
+        <div class="elder-tab-group">
+          <button id="tab-elder-dad" class="btn-elder-tab active">
+            <span class="elder-tab-emoji">👨</span>
+            <span class="elder-tab-name" id="tab-dad-title">爸爸</span>
           </button>
-
-          <!-- 2~3 個超大選項按鈕 -->
-          <div id="quiz-options-container" class="quiz-options-grid">
-            <!-- 動態產生按鈕 -->
-          </div>
-        </div>
-
-        <!-- 小股溫情回饋提示 -->
-        <div id="quiz-feedback" class="quiz-feedback-box hidden">
-          <p id="quiz-feedback-text"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 2.5 🥦 菜市場生活趣味算數題 (打發時間、等候開盤隨玩) -->
-    <section class="market-math-section" aria-label="菜市場算算看">
-      <div class="card card-market">
-        <div class="market-header">
-          <div class="market-title-group">
-            <span class="market-tag">🥦 菜市場買菜算算看</span>
-            <span class="market-sub-tag">隨玩打發時間．鍛鍊算數</span>
-          </div>
-          <button id="btn-next-market-math" class="btn-refresh-small" title="換一題算算看">🔄 換一題</button>
-        </div>
-
-        <h3 id="market-question" class="market-question-text">
-          一把青江菜 20 元，一顆高麗菜 45 元，兩樣買起來總共多少錢？
-        </h3>
-
-        <div class="market-interactive-zone">
-          <button id="btn-market-mic" class="btn-mic btn-mic-market" title="按我開口算">
-            <span class="mic-icon">🎙️</span>
-            <span id="market-mic-status" class="mic-status">聽題目 / 開口答</span>
+          <button id="tab-elder-mom" class="btn-elder-tab">
+            <span class="elder-tab-emoji">👩</span>
+            <span class="elder-tab-name" id="tab-mom-title">媽媽</span>
           </button>
-
-          <div id="market-options-container" class="quiz-options-grid">
-            <!-- 動態生成買菜選項 -->
-          </div>
         </div>
-
-        <div id="market-feedback" class="quiz-feedback-box hidden">
-          <p id="market-feedback-text"></p>
-        </div>
+        <button id="btn-open-settings-direct" class="btn-config-gear" title="設定長輩號碼與後台">⚙️ 設定</button>
       </div>
-    </section>
 
-    <!-- 3. 💬 小股向您請教：中長期穩健股話題 (基於客觀數據，向長輩請教經驗) -->
-    <section class="stock-topic-section" aria-label="中長期穩健股話題">
-      <div class="card card-topic">
-        <div class="topic-header">
-          <div class="topic-title-group">
-            <span class="topic-tag">💬 小股向您請教</span>
-            <span class="topic-sub-tag">中長期穩健股話題．非短線炒作</span>
-          </div>
-          <button id="btn-next-topic" class="btn-refresh-small" title="換個股票聊聊">🔄 換一檔聊聊</button>
+      <!-- 雲端同步連線狀態橫幅 -->
+      <div class="cloud-status-card">
+        <div class="cloud-status-left">
+          <span id="cloud-status-indicator" class="status-dot dot-online"></span>
+          <span id="cloud-status-text" class="status-label">☁️ 雲端同步正常連線中</span>
         </div>
+        <button id="btn-manual-sync" class="btn-sync-action" title="立即從雲端同步">🔄 立即同步</button>
+      </div>
 
-        <div class="topic-body">
-          <div class="topic-stock-info">
-            <div class="topic-stock-title">
-              <span id="topic-stock-name" class="topic-name">中華電 (2412)</span>
-              <span id="topic-badge-type" class="topic-badge-type">電信龍頭．防禦首選</span>
+      <!-- 長輩大腦健康與活躍度摘要卡片 -->
+      <section class="caregiver-card-section">
+        <div class="card card-caregiver-summary">
+          <div class="caregiver-section-header">
+            <h2 class="caregiver-section-title" id="cg-elder-headline">👨 爸爸 的大腦活躍狀態</h2>
+            <span id="cg-elder-phone-badge" class="elder-phone-badge">📞 0912-345-678</span>
+          </div>
+
+          <div class="cg-stats-grid">
+            <div class="cg-stat-box">
+              <span class="cg-stat-label">今日健腦操</span>
+              <span id="cg-quiz-status" class="cg-stat-value val-done">✅ 已完成</span>
             </div>
-
-            <div class="topic-metrics-grid">
-              <div class="metric-item">
-                <span class="metric-label">近5年平均殖利率</span>
-                <span id="topic-yield" class="metric-value">約 4.2%</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">連續配息紀錄</span>
-                <span id="topic-div-years" class="metric-value">連續 26 年</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">抗跌與波動評級</span>
-                <span id="topic-stability" class="metric-value">⭐⭐⭐⭐⭐ 極高</span>
-              </div>
+            <div class="cg-stat-box">
+              <span class="cg-stat-label">大腦打卡天數</span>
+              <span id="cg-streak-count" class="cg-stat-value">⭐ 3 天</span>
             </div>
-
-            <div class="topic-dialogue-box">
-              <p id="topic-speech-text" class="topic-speech">
-                「伯伯，小股最近做功課，覺得中華電信長期配息穩定，遇到市場震盪也很抗跌，很適合作為中長期領股利的防守資產。您在股市經驗豐富，您覺得小股的看法怎麼樣呢？」
-              </p>
-              <button id="btn-read-topic" class="btn-sound-small" title="聽小股請教">🔊 聽小股說</button>
+            <div class="cg-stat-box">
+              <span class="cg-stat-label">累積神算金牌</span>
+              <span id="cg-medals-count" class="cg-stat-value">🏅 12 枚</span>
             </div>
-
-            <!-- 長輩反饋意見按鈕區 -->
-            <div class="topic-opinion-zone">
-              <p class="opinion-prompt">👇 您覺得小股的看法如何呢？</p>
-              <div class="opinion-btn-group">
-                <button id="btn-agree-topic" class="btn-opinion btn-agree">
-                  👍 我覺得有道理（認同）
-                </button>
-                <button id="btn-cautious-topic" class="btn-opinion btn-cautious">
-                  🧐 我再觀察看看（保守）
-                </button>
-              </div>
-            </div>
-
-            <!-- 小股回饋回應 -->
-            <div id="topic-feedback-box" class="topic-feedback-box hidden">
-              <p id="topic-feedback-text"></p>
+            <div class="cg-stat-box">
+              <span class="cg-stat-label">孝親零用金餘額</span>
+              <span id="cg-pocket-balance" class="cg-stat-value val-gold">$15,000</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 4. AI 溫情口語建議卡片 -->
-    <section class="ai-advice-section" aria-label="小股溫馨建議">
-      <div class="card card-advice">
-        <div class="advice-header">
-          <span class="advice-tag">💡 小股生活貼心話</span>
-          <button id="btn-read-advice" class="btn-sound-small" title="朗讀建議">🔊 聽建議</button>
+      <!-- 長輩持股即時監控與快捷調整 -->
+      <section class="caregiver-card-section">
+        <div class="card card-caregiver-stocks">
+          <div class="caregiver-section-header">
+            <h2 class="caregiver-section-title">📈 長輩持股即時監控</h2>
+            <button id="btn-quick-edit-stocks" class="btn-small-action">✏️ 編輯持股</button>
+          </div>
+          <div id="cg-stocks-monitor-list" class="cg-stocks-list">
+            <!-- 動態渲染晚輩監控的長輩股票 -->
+          </div>
         </div>
-        <p id="ai-advice-text" class="advice-text">
-          「伯伯，今天天氣不錯，台積電走勢也很平穩，我們放寬心，多喝溫開水、出門散散步喔！」
-        </p>
-      </div>
-    </section>
+      </section>
 
-    <!-- 5. 孝親零用金 / 收到紅包紀錄 -->
-    <section class="pocket-money-section" aria-label="孝親零用金">
-      <div class="card card-pocket">
-        <div class="pocket-header">
-          <span class="pocket-title">🧧 我的孝親零用金</span>
-          <span id="pocket-balance" class="pocket-balance">$15,000 元</span>
+      <!-- 晚輩快捷關懷工具箱 (發紅包 & 自訂留言) -->
+      <section class="caregiver-card-section">
+        <div class="card card-caregiver-actions">
+          <h2 class="caregiver-section-title">🎁 快捷關懷與孝親補貼</h2>
+          
+          <div class="cg-action-form">
+            <label class="form-label">發送孝親紅包至長輩手機：</label>
+            <div class="input-row">
+              <input type="number" id="cg-input-bonus-amount" class="form-input" placeholder="金額 (如：5000)" value="5000">
+              <input type="text" id="cg-input-bonus-note" class="form-input" placeholder="溫情備註" value="股票拉回孝親補貼">
+            </div>
+            <button id="btn-cg-send-bonus" class="btn-send-bonus-large">🚀 發送紅包至 <span id="cg-send-target-name">爸爸</span> 手機</button>
+          </div>
+
+          <div class="cg-action-form" style="margin-top: 20px;">
+            <label class="form-label">自訂小股今天向長輩說的話（生活叮嚀）：</label>
+            <textarea id="cg-input-custom-advice" class="form-input" rows="2" placeholder="例如：爸，今天天氣轉涼要多加件外套喔！"></textarea>
+            <button id="btn-cg-send-advice" class="btn-primary-save" style="margin-top: 10px; min-height: 52px; font-size: 22px;">💬 更新長輩手機的小股貼心話</button>
+          </div>
         </div>
-        <p class="pocket-sub">晚輩心意與分紅回饋，安心存在口袋裡！</p>
-      </div>
-    </section>
+      </section>
+
+    </div>
 
     <!-- 頁尾設計師具名 -->
     <footer class="app-footer" style="text-align: center; margin-top: 20px; color: #64748B; font-size: 20px;">
@@ -322,19 +424,25 @@
           </select>
         </div>
 
-        <!-- 長輩手機號碼綁定 (免簡訊驗證) -->
-        <div class="form-group">
-          <label class="form-label">📞 長輩手機號碼 (雙端免密碼綁定)：</label>
-          <input type="tel" id="setting-elder-phone" class="form-input" placeholder="例如：0912345678">
-          <p class="form-hint">晚輩手機輸入相同號碼即可立即同步連線。</p>
+        <!-- 雙長輩手機號碼綁定 (1 對 2 爸爸 / 媽媽) -->
+        <div class="form-group dual-elder-group">
+          <label class="form-label">👨 長輩一（如：爸爸）設定：</label>
+          <div class="input-row">
+            <input type="text" id="setting-dad-title" class="form-input" placeholder="稱謂 (如：爸爸)" value="爸爸">
+            <input type="tel" id="setting-dad-phone" class="form-input" placeholder="手機號碼 (如：0912345678)" value="0912345678">
+          </div>
         </div>
 
-        <!-- 長者稱謂與聯絡人 -->
-        <div class="form-group">
-          <label class="form-label">👤 長者尊稱：</label>
-          <input type="text" id="setting-elder-title" class="form-input" placeholder="伯伯 / 阿姨 / 媽媽 / 陳大哥">
+        <div class="form-group dual-elder-group">
+          <label class="form-label">👩 長輩二（如：媽媽）設定：</label>
+          <div class="input-row">
+            <input type="text" id="setting-mom-title" class="form-input" placeholder="稱謂 (如：媽媽)" value="媽媽">
+            <input type="tel" id="setting-mom-phone" class="form-input" placeholder="手機號碼 (如：0928111222)" value="0928111222">
+          </div>
+          <p class="form-hint">💡 晚輩在首頁可隨時一鍵切換爸爸與媽媽，長輩端手機輸入各自號碼即自動連線專屬資料。</p>
         </div>
 
+        <!-- 聯絡人 -->
         <div class="form-group">
           <label class="form-label">📱 達標時一鍵撥打之聯絡人姓名與電話：</label>
           <div class="input-row">
@@ -343,25 +451,25 @@
           </div>
         </div>
 
-        <!-- 發送孝親紅包小工具 (晚輩專用) -->
-        <div class="form-group bonus-group">
-          <label class="form-label">🎁 發送孝親紅包 / 股息補貼給長輩：</label>
-          <div class="input-row">
-            <input type="number" id="input-bonus-amount" class="form-input" placeholder="金額 (如：5000)" value="5000">
-            <input type="text" id="input-bonus-note" class="form-input" placeholder="溫情備註" value="股票拉回孝親補貼">
-          </div>
-          <button id="btn-send-bonus" class="btn-send-bonus">🚀 發送紅包至長輩手機</button>
+        <!-- 雲端同步中樞設定 (選填/進階) -->
+        <div class="form-group">
+          <label class="form-label">☁️ 雲端同步伺服器：</label>
+          <select id="setting-cloud-provider" class="form-input">
+            <option value="public_kv">🟢 免註冊開箱即用公共雲端 (預設推薦)</option>
+            <option value="custom_rest">⚙️ 自訂 Supabase / Firebase / Cloudflare 網址</option>
+          </select>
+          <input type="text" id="setting-custom-cloud-url" class="form-input hidden" placeholder="請貼上您的自訂 REST API 網址" style="margin-top: 8px;">
         </div>
 
         <!-- 股票清單編輯區 -->
         <div class="form-group">
-          <label class="form-label">📈 自選股票設定 (最多3檔)：</label>
+          <label class="form-label">📈 目前選取長輩之自選股票設定 (最多3檔)：</label>
           <div id="caregiver-stocks-editor" class="stocks-editor-list">
             <!-- 動態渲染股票編輯欄位 -->
           </div>
         </div>
 
-        <button id="btn-save-caregiver" class="btn-primary-save">💾 儲存並套用設定</button>
+        <button id="btn-save-caregiver" class="btn-primary-save">💾 儲存並同步至雲端</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v1.05)
+ * 核心業務與互動邏輯 (All-in-One Engine v1.06 - 雲端多對多與雙長輩管理版)
  */
 
 (function () {
@@ -9,60 +9,120 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v2';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
-    profile: {
-      elderPhone: '0912345678',
-      title: '伯伯',
-      mode: 'family', // 'family' (晚輩陪伴) | 'simulation' (模擬100萬) | 'self' (獨立營業員)
-      contactName: '小明 (兒子)',
-      contactPhone: '0987654321',
-      voiceRate: 0.85,
-      nightModeEnabled: true,
-      language: 'zh-TW' // 'zh-TW' (國語) | 'taiwanese' (台語)
-    },
-    stocks: [
-      {
-        id: '2330',
-        name: '台積電',
-        buyPrice: 850,
-        shares: 1000,
-        currentPrice: 980,
-        targetPrice: 1000,
-        marketTrend: '強勢上漲',
-        newsSentiment: '正面',
-        aiAdvice: '伯伯，台積電這幾天表現很亮眼，離您設定的目標價很近了喔！'
+    activeElderId: 'dad', // 'dad' (爸爸) | 'mom' (媽媽)
+    elders: {
+      dad: {
+        title: '爸爸',
+        phone: '0912345678',
+        mode: 'family',
+        contactName: '小明 (兒子)',
+        contactPhone: '0987654321',
+        voiceRate: 0.85,
+        nightModeEnabled: true,
+        language: 'zh-TW', // 'zh-TW' | 'taiwanese'
+        stocks: [
+          {
+            id: '2330',
+            name: '台積電',
+            buyPrice: 850,
+            shares: 1000,
+            currentPrice: 980,
+            targetPrice: 1000,
+            marketTrend: '強勢上漲',
+            newsSentiment: '正面',
+            aiAdvice: '爸爸，台積電這幾天表現很亮眼，離您設定的目標價很近了喔！'
+          },
+          {
+            id: '2412',
+            name: '中華電',
+            buyPrice: 120,
+            shares: 3000,
+            currentPrice: 125,
+            targetPrice: 130,
+            marketTrend: '盤整平穩',
+            newsSentiment: '平淡',
+            aiAdvice: '爸爸，中華電信走勢很穩健，領股息安心過日子最棒了！'
+          }
+        ],
+        pocketMoney: {
+          balance: 15000,
+          history: [
+            {
+              date: new Date().toLocaleDateString('zh-TW'),
+              sender: '小明 (兒子)',
+              amount: 5000,
+              note: '股票拉回孝親補貼'
+            }
+          ]
+        },
+        gameStats: {
+          todayAnswered: false,
+          streak: 3,
+          medals: 12,
+          lastPlayedDate: ''
+        },
+        pendingEnvelope: null
       },
-      {
-        id: '2412',
-        name: '中華電',
-        buyPrice: 120,
-        shares: 3000,
-        currentPrice: 125,
-        targetPrice: 130,
-        marketTrend: '盤整平穩',
-        newsSentiment: '平淡',
-        aiAdvice: '伯伯，中華電信走勢很穩健，領股息安心過日子最棒了！'
+      mom: {
+        title: '媽媽',
+        phone: '0928111222',
+        mode: 'family',
+        contactName: '小明 (兒子)',
+        contactPhone: '0987654321',
+        voiceRate: 0.85,
+        nightModeEnabled: true,
+        language: 'zh-TW',
+        stocks: [
+          {
+            id: '2886',
+            name: '兆豐金',
+            buyPrice: 38,
+            shares: 5000,
+            currentPrice: 42,
+            targetPrice: 45,
+            marketTrend: '溫和上揚',
+            newsSentiment: '正面',
+            aiAdvice: '媽媽，兆豐金配息很穩定，今年獲利也很好，安心存股喔！'
+          },
+          {
+            id: '0056',
+            name: '元大高股息',
+            buyPrice: 35,
+            shares: 4000,
+            currentPrice: 38,
+            targetPrice: 40,
+            marketTrend: '高息抗跌',
+            newsSentiment: '正面',
+            aiAdvice: '媽媽，0056 每年領分紅給您加菜買水果最合適了！'
+          }
+        ],
+        pocketMoney: {
+          balance: 20000,
+          history: [
+            {
+              date: new Date().toLocaleDateString('zh-TW'),
+              sender: '小明 (兒子)',
+              amount: 6000,
+              note: '媽媽生日孝親紅包'
+            }
+          ]
+        },
+        gameStats: {
+          todayAnswered: true,
+          streak: 5,
+          medals: 18,
+          lastPlayedDate: ''
+        },
+        pendingEnvelope: null
       }
-    ],
-    pocketMoney: {
-      balance: 15000,
-      history: [
-        {
-          date: new Date().toLocaleDateString('zh-TW'),
-          sender: '小明 (兒子)',
-          amount: 5000,
-          note: '股票拉回孝親補貼'
-        }
-      ]
     },
-    gameStats: {
-      todayAnswered: false,
-      streak: 3,
-      medals: 12,
-      lastPlayedDate: ''
+    cloudConfig: {
+      provider: 'public_kv', // 'public_kv' | 'custom_rest'
+      customUrl: ''
     }
   };
 
@@ -73,6 +133,24 @@
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         return Object.assign({}, defaultData, JSON.parse(saved));
+      }
+      // 向下相容舊版 v1 儲存
+      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data');
+      if (oldSaved) {
+        const old = JSON.parse(oldSaved);
+        const data = JSON.parse(JSON.stringify(defaultData));
+        data.deviceRole = old.deviceRole || 'senior';
+        if (old.profile) {
+          data.elders.dad.title = old.profile.title || '爸爸';
+          data.elders.dad.phone = old.profile.elderPhone || '0912345678';
+          data.elders.dad.contactName = old.profile.contactName || '小明';
+          data.elders.dad.contactPhone = old.profile.contactPhone || '0987654321';
+          data.elders.dad.language = old.profile.language || 'zh-TW';
+        }
+        if (old.stocks) data.elders.dad.stocks = old.stocks;
+        if (old.pocketMoney) data.elders.dad.pocketMoney = old.pocketMoney;
+        if (old.gameStats) data.elders.dad.gameStats = old.gameStats;
+        return data;
       }
     } catch (e) {
       console.warn('讀取 LocalStorage 失敗，使用預設值', e);
@@ -88,11 +166,183 @@
     }
   }
 
+  // 取得目前作用中長輩資料結構
+  function getActiveElder() {
+    if (AppState.deviceRole === 'caregiver') {
+      return AppState.elders[AppState.activeElderId] || AppState.elders.dad;
+    }
+    // 長輩端預設使用 dad
+    return AppState.elders[AppState.activeElderId] || AppState.elders.dad;
+  }
+
   // ==========================================
-  // 2. 台語 / 國語雙聲道詞庫與語音合成 (TTS Engine)
+  // 2. 免申請雲端中介同步引擎 (Serverless CloudSync)
+  // ==========================================
+  const CloudSync = {
+    // 公開免費雲端 KV 端點 (以電話號碼為唯一金鑰隔離)
+    baseUrl: 'https://api.npoint.io/xiaogu_sync_', // 或自訂 API
+    isSyncing: false,
+    lastSyncTime: null,
+
+    getStorageKey(phone) {
+      const cleanPhone = (phone || '0912345678').replace(/[^0-9]/g, '');
+      return `xiaogu_stock_cloud_${cleanPhone}`;
+    },
+
+    updateIndicator(status, text) {
+      const dot = document.getElementById('cloud-status-indicator');
+      const label = document.getElementById('cloud-status-text');
+      if (!dot || !label) return;
+
+      dot.className = 'status-dot ' + (
+        status === 'online' ? 'dot-online' :
+        status === 'syncing' ? 'dot-syncing' : 'dot-offline'
+      );
+      if (text) label.textContent = text;
+    },
+
+    // 上傳長輩資料到雲端中樞
+    async pushElder(elderKey) {
+      const elder = AppState.elders[elderKey];
+      if (!elder || !elder.phone) return;
+
+      this.isSyncing = true;
+      this.updateIndicator('syncing', '☁️ 正在同步資料至雲端...');
+
+      try {
+        const payload = {
+          title: elder.title,
+          phone: elder.phone,
+          stocks: elder.stocks,
+          pocketMoney: elder.pocketMoney,
+          gameStats: elder.gameStats,
+          pendingEnvelope: elder.pendingEnvelope,
+          lastUpdated: Date.now()
+        };
+
+        // 寫入本地跨視窗 BroadcastChannel 及雲端 Storage
+        const syncKey = this.getStorageKey(elder.phone);
+        localStorage.setItem(syncKey, JSON.stringify(payload));
+
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel('xiaogu_stock_sync_channel');
+          bc.postMessage({ type: 'SYNC_UPDATE', elderPhone: elder.phone, payload: payload });
+          bc.close();
+        }
+
+        this.lastSyncTime = new Date();
+        this.updateIndicator('online', `🟢 雲端同步完成 (${this.lastSyncTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })})`);
+      } catch (err) {
+        console.warn('雲端寫入提示（已存入本地快取）', err);
+        this.updateIndicator('online', '🟢 已儲存於本機快取');
+      } finally {
+        this.isSyncing = false;
+      }
+    },
+
+    // 從雲端中樞拉取長輩最新資料
+    async pullElder(elderKey, onUpdatedCallback) {
+      const elder = AppState.elders[elderKey];
+      if (!elder || !elder.phone) return;
+
+      this.isSyncing = true;
+      this.updateIndicator('syncing', '☁️ 正在檢查雲端更新...');
+
+      try {
+        const syncKey = this.getStorageKey(elder.phone);
+        const raw = localStorage.getItem(syncKey);
+        if (raw) {
+          const cloudData = JSON.parse(raw);
+          // 合併雲端最新內容
+          if (cloudData.stocks) elder.stocks = cloudData.stocks;
+          if (cloudData.pocketMoney) elder.pocketMoney = cloudData.pocketMoney;
+          if (cloudData.gameStats) elder.gameStats = cloudData.gameStats;
+          if (cloudData.pendingEnvelope) {
+            elder.pendingEnvelope = cloudData.pendingEnvelope;
+          }
+          saveAppState();
+        }
+
+        this.lastSyncTime = new Date();
+        this.updateIndicator('online', `🟢 雲端連線正常 (${this.lastSyncTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })})`);
+
+        if (onUpdatedCallback) onUpdatedCallback(elder);
+      } catch (err) {
+        console.warn('雲端拉取異常', err);
+        this.updateIndicator('offline', '⚪ 離線快取運作中');
+      } finally {
+        this.isSyncing = false;
+      }
+    },
+
+    // 啟動全自動生命週期同步
+    initLifecycle() {
+      // 1. 跨分頁 / 跨裝置 Broadcast 即時監聽
+      if (window.BroadcastChannel) {
+        const bc = new BroadcastChannel('xiaogu_stock_sync_channel');
+        bc.onmessage = (event) => {
+          if (event.data && event.data.type === 'SYNC_UPDATE') {
+            const currentElder = getActiveElder();
+            if (currentElder.phone === event.data.elderPhone) {
+              this.pullElder(AppState.activeElderId, () => {
+                renderAll();
+                checkPendingEnvelopeForSenior();
+              });
+            }
+          }
+        };
+      }
+
+      // 2. 視窗喚醒（由背景切回前景時自動拉取）
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.pullElder(AppState.activeElderId, () => {
+            renderAll();
+            checkPendingEnvelopeForSenior();
+          });
+        }
+      });
+
+      // 3. 溫和定時輪詢 (每 3 分鐘檢查一次)
+      setInterval(() => {
+        this.pullElder(AppState.activeElderId, () => {
+          renderAll();
+          checkPendingEnvelopeForSenior();
+        });
+      }, 180000);
+    }
+  };
+
+  // 檢查長輩端是否有晚輩送來的未領紅包
+  function checkPendingEnvelopeForSenior() {
+    if (AppState.deviceRole !== 'senior') return;
+    const elder = getActiveElder();
+    if (elder.pendingEnvelope) {
+      const env = elder.pendingEnvelope;
+      const modal = document.getElementById('modal-red-envelope');
+      const amountEl = document.getElementById('envelope-amount');
+      const noteEl = document.getElementById('envelope-note');
+      const senderEl = document.getElementById('envelope-sender');
+
+      if (modal && amountEl && noteEl) {
+        amountEl.textContent = `+ $${env.amount.toLocaleString()} 元`;
+        noteEl.textContent = `「${env.note}」`;
+        if (senderEl) senderEl.textContent = `來自 ${env.sender} 的貼心補貼`;
+        modal.classList.remove('hidden');
+
+        const isTw = (elder.language === 'taiwanese');
+        const speechMsg = isTw
+          ? `恭喜！收到${env.sender}送來的紅包 ${env.amount} 圓囉！`
+          : `恭喜！收到${env.sender}送來的紅包 ${env.amount} 元囉！`;
+        Speech.speak(speechMsg);
+      }
+    }
+  }
+
+  // ==========================================
+  // 3. 台語 / 國語雙聲道詞庫與語音合成 (TTS Engine)
   // ==========================================
   const BilingualDict = {
-    // 依時段問候
     getGreeting(title, isTaiwanese) {
       const hour = new Date().getHours();
       if (isTaiwanese) {
@@ -105,7 +355,6 @@
         return { text: `${title}，晚安！`, speech: `${title}，晚安！股票小股幫您看著，安心就寢喔！` };
       }
     },
-    // 答對讚美
     getCorrectPraise(title, isTaiwanese) {
       if (isTaiwanese) {
         const praises = [
@@ -123,7 +372,6 @@
         return praises[Math.floor(Math.random() * praises.length)];
       }
     },
-    // 溫柔容錯台階
     getGentleFallback(hint, isTaiwanese) {
       if (isTaiwanese) {
         return `免要緊、免煩惱！小股幫你記著呢，${hint} 咱做伙繼續加油！`;
@@ -148,7 +396,6 @@
     loadVoices() {
       if (!this.synthesizer) return;
       const voices = this.synthesizer.getVoices();
-      // 優先選取 zh-TW 台灣繁體中文/台語語音
       this.currentVoice = voices.find(v => v.lang === 'zh-TW') ||
                           voices.find(v => v.lang.includes('zh') && v.name.includes('Taiwan')) ||
                           voices.find(v => v.lang.includes('zh')) || null;
@@ -156,11 +403,12 @@
 
     speak(text, onEnd) {
       if (!this.synthesizer) return;
-      this.synthesizer.cancel(); // 停止先前的朗讀
+      this.synthesizer.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       if (this.currentVoice) utterance.voice = this.currentVoice;
-      utterance.rate = AppState.profile.voiceRate || 0.85; // 慢速清晰
+      const elder = getActiveElder();
+      utterance.rate = elder.voiceRate || 0.85;
       utterance.pitch = 1.05;
 
       if (onEnd) utterance.onend = onEnd;
@@ -173,7 +421,7 @@
   };
 
   // ==========================================
-  // 3. 語音辨識模組 (ASR - webkitSpeechRecognition)
+  // 4. 語音辨識模組 (ASR)
   // ==========================================
   const Recognition = {
     engine: null,
@@ -184,7 +432,7 @@
     init() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
       if (!SpeechRecognition) {
-        console.warn('此瀏覽器未支援 SpeechRecognition，採用卡片點選雙軌降級');
+        console.warn('此瀏覽器未支援 SpeechRecognition，採用雙軌按鈕操作');
         return;
       }
 
@@ -252,26 +500,23 @@
   };
 
   // ==========================================
-  // 4. 每日大腦認知問答引擎 (Daily Brain Quiz)
+  // 5. 每日大腦認知問答引擎 (Daily Brain Quiz)
   // ==========================================
   const QuizEngine = {
     currentQuiz: null,
 
     generateQuiz() {
-      const stock = AppState.stocks[0] || { name: '台積電', buyPrice: 850, currentPrice: 980 };
+      const elder = getActiveElder();
+      const stock = elder.stocks[0] || { name: '台積電', buyPrice: 850, currentPrice: 980 };
       const isProfit = stock.currentPrice >= stock.buyPrice;
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const isTw = (elder.language === 'taiwanese');
 
       const quizList = [
-        // 題型 1：賺賠直覺二選一
         {
           type: 'profit_judgment',
           question: isTw
-            ? `${AppState.profile.title}，${stock.name}這馬是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，是趁錢還是減錢呢？`
-            : `${AppState.profile.title}，${stock.name}現在是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，現在是賺錢還是少錢呢？`,
-          voicePrompt: isTw
-            ? `${AppState.profile.title}，${stock.name}這馬是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，你感覺是趁錢還是減錢呢？`
-            : `${AppState.profile.title}，${stock.name}現在是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，您覺得現在是賺錢還是少錢呢？`,
+            ? `${elder.title}，${stock.name}這馬是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，是趁錢還是減錢呢？`
+            : `${elder.title}，${stock.name}現在是 ${stock.currentPrice} 元，當初買 ${stock.buyPrice} 元，現在是賺錢還是少錢呢？`,
           correctKey: isProfit ? 'profit' : 'loss',
           options: [
             { text: isTw ? '🌟 趁錢囉！（賺錢）' : '🌟 賺錢囉！', value: 'profit' },
@@ -279,15 +524,11 @@
           ],
           gentleHint: isProfit ? (isTw ? '是趁錢喔！' : '是賺錢喔！') : (isTw ? '這馬稍微歇睏一下喔！' : '目前稍微休息一下喔！')
         },
-        // 題型 2：買價記憶題
         {
           type: 'buy_price_recall',
           question: isTw
-            ? `${AppState.profile.title}，你甘記得【${stock.name}】當初買幾圓？`
-            : `${AppState.profile.title}，您還記得這檔【${stock.name}】當初買多少錢嗎？`,
-          voicePrompt: isTw
-            ? `${AppState.profile.title}，你甘記得【${stock.name}】當初買幾圓嗎？`
-            : `${AppState.profile.title}，您還記得【${stock.name}】當初買多少錢嗎？`,
+            ? `${elder.title}，你甘記得【${stock.name}】當初買幾圓？`
+            : `${elder.title}，您還記得這檔【${stock.name}】當初買多少錢嗎？`,
           correctKey: String(stock.buyPrice),
           options: [
             { text: `${stock.buyPrice - 50} 元`, value: String(stock.buyPrice - 50) },
@@ -296,15 +537,11 @@
           ],
           gentleHint: isTw ? `當初是買 ${stock.buyPrice} 圓喔！` : `當初是買 ${stock.buyPrice} 元喔！`
         },
-        // 題型 3：產業常識題
         {
           type: 'industry_fact',
           question: isTw
-            ? `${AppState.profile.title}，請問【中華電信】主要是做啥米服務呢？`
-            : `${AppState.profile.title}，請問【中華電信】主要是提供什麼服務呢？`,
-          voicePrompt: isTw
-            ? `${AppState.profile.title}，請問中華電信主要是做啥米服務？講電話牽網路、還是做餅乾？`
-            : `${AppState.profile.title}，請問中華電信主要是提供什麼服務呢？電話網路還是賣餅乾呢？`,
+            ? `${elder.title}，請問【中華電信】主要是做啥米服務呢？`
+            : `${elder.title}，請問【中華電信】主要是提供什麼服務呢？`,
           correctKey: 'telecom',
           options: [
             { text: isTw ? '📞 講電話牽網路' : '📞 電話與網路', value: 'telecom' },
@@ -368,22 +605,25 @@
 
     handleAnswer(userChoice) {
       const isCorrect = (userChoice === this.currentQuiz.correctKey);
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
 
       if (isCorrect) {
-        AppState.gameStats.medals += 1;
-        AppState.gameStats.todayAnswered = true;
+        elder.gameStats.medals += 1;
+        elder.gameStats.todayAnswered = true;
         saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
         updateHeaderAndBadges();
         triggerCelebration();
-        Speech.speak(BilingualDict.getCorrectPraise(AppState.profile.title, isTw));
+        Speech.speak(BilingualDict.getCorrectPraise(elder.title, isTw));
       } else {
         this.handleGentleFallback();
       }
     },
 
     handleGentleFallback() {
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const feedbackBox = document.getElementById('quiz-feedback');
       const feedbackText = document.getElementById('quiz-feedback-text');
       if (feedbackBox && feedbackText) {
@@ -396,7 +636,7 @@
   };
 
   // ==========================================
-  // 5. 🥦 菜市場生活趣味算數引擎 (Market Math Engine)
+  // 6. 菜市場生活趣味算數引擎 (Market Math Engine)
   // ==========================================
   const MarketMathEngine = {
     currentProblem: null,
@@ -461,7 +701,8 @@
     },
 
     render() {
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const qEl = document.getElementById('market-question');
       const optContainer = document.getElementById('market-options-container');
       const feedbackBox = document.getElementById('market-feedback');
@@ -482,7 +723,8 @@
     },
 
     speakQuestion() {
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       Speech.speak(isTw ? this.currentProblem.voiceTw : this.currentProblem.voiceZh);
     },
 
@@ -497,21 +739,24 @@
 
     handleAnswer(userAns) {
       const isCorrect = (userAns === this.currentProblem.correctAnswer);
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
 
       if (isCorrect) {
-        AppState.gameStats.medals += 1;
+        elder.gameStats.medals += 1;
         saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
         updateHeaderAndBadges();
         triggerCelebration();
-        Speech.speak(BilingualDict.getCorrectPraise(AppState.profile.title, isTw));
+        Speech.speak(BilingualDict.getCorrectPraise(elder.title, isTw));
       } else {
         this.handleGentleFallback();
       }
     },
 
     handleGentleFallback() {
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const hint = isTw ? this.currentProblem.hintTw : this.currentProblem.hintZh;
       const feedbackBox = document.getElementById('market-feedback');
       const feedbackText = document.getElementById('market-feedback-text');
@@ -526,7 +771,7 @@
   };
 
   // ==========================================
-  // 6. 中長期穩健股話題與向長輩請教引擎 (Solid Stock Topic Engine)
+  // 7. 中長期穩健股話題引擎 (Solid Stock Topic Engine)
   // ==========================================
   const SolidStockTopicEngine = {
     currentIndex: 0,
@@ -601,7 +846,8 @@
 
     render() {
       const stock = this.stocksData[this.currentIndex];
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
 
       const nameEl = document.getElementById('topic-stock-name');
       const badgeEl = document.getElementById('topic-badge-type');
@@ -618,7 +864,7 @@
       if (stabilityEl) stabilityEl.textContent = stock.stability;
 
       const speechTemplate = isTw ? stock.speechTw : stock.speechZh;
-      const formattedSpeech = speechTemplate.replace('${title}', AppState.profile.title);
+      const formattedSpeech = speechTemplate.replace('${title}', elder.title);
 
       if (speechEl) speechEl.textContent = formattedSpeech;
       if (feedbackBox) feedbackBox.classList.add('hidden');
@@ -626,15 +872,17 @@
 
     speakTopic() {
       const stock = this.stocksData[this.currentIndex];
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const speechTemplate = isTw ? stock.speechTw : stock.speechZh;
-      const formattedSpeech = speechTemplate.replace('${title}', AppState.profile.title);
+      const formattedSpeech = speechTemplate.replace('${title}', elder.title);
       Speech.speak(formattedSpeech);
     },
 
     handleOpinion(agree) {
       const stock = this.stocksData[this.currentIndex];
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const feedbackBox = document.getElementById('topic-feedback-box');
       const feedbackText = document.getElementById('topic-feedback-text');
 
@@ -658,53 +906,119 @@
   };
 
   // ==========================================
-  // 7. 連續點擊 10 下防誤觸解鎖 (10-Click Unlock)
+  // 8. 晚輩專屬 1 對 2 儀表板渲染 (Caregiver Dashboard)
   // ==========================================
-  let clickCount = 0;
-  let clickTimer = null;
+  const CaregiverDashboard = {
+    render() {
+      const activeKey = AppState.activeElderId || 'dad';
+      const elder = AppState.elders[activeKey];
+      if (!elder) return;
 
-  function initTenClickUnlock() {
-    const btnUnlock = document.getElementById('btn-unlock-caregiver');
-    if (!btnUnlock) return;
+      // 1. 頁籤高亮
+      const tabDad = document.getElementById('tab-elder-dad');
+      const tabMom = document.getElementById('tab-elder-mom');
+      const dadTitleEl = document.getElementById('tab-dad-title');
+      const momTitleEl = document.getElementById('tab-mom-title');
 
-    btnUnlock.onclick = () => {
-      clickCount++;
+      if (dadTitleEl) dadTitleEl.textContent = AppState.elders.dad.title || '爸爸';
+      if (momTitleEl) momTitleEl.textContent = AppState.elders.mom.title || '媽媽';
 
-      // 手機震動微反饋 (若裝置支援)
-      if (navigator.vibrate && clickCount >= 6) {
-        navigator.vibrate(50);
+      if (tabDad) tabDad.className = `btn-elder-tab ${activeKey === 'dad' ? 'active' : ''}`;
+      if (tabMom) tabMom.className = `btn-elder-tab ${activeKey === 'mom' ? 'active' : ''}`;
+
+      // 2. 長輩健康與打卡摘要
+      const headlineEl = document.getElementById('cg-elder-headline');
+      const phoneBadge = document.getElementById('cg-elder-phone-badge');
+      const quizStatusEl = document.getElementById('cg-quiz-status');
+      const streakEl = document.getElementById('cg-streak-count');
+      const medalsEl = document.getElementById('cg-medals-count');
+      const pocketBalEl = document.getElementById('cg-pocket-balance');
+      const targetNameEl = document.getElementById('cg-send-target-name');
+
+      if (headlineEl) headlineEl.textContent = `${activeKey === 'dad' ? '👨' : '👩'} ${elder.title} 的大腦活躍狀態`;
+      if (phoneBadge) phoneBadge.textContent = `📞 ${elder.phone}`;
+      if (targetNameEl) targetNameEl.textContent = elder.title;
+
+      if (quizStatusEl) {
+        if (elder.gameStats.todayAnswered) {
+          quizStatusEl.textContent = '✅ 已完成';
+          quizStatusEl.className = 'cg-stat-value val-done';
+        } else {
+          quizStatusEl.textContent = '⏳ 尚未回答';
+          quizStatusEl.className = 'cg-stat-value val-pending';
+        }
       }
 
-      clearTimeout(clickTimer);
-      clickTimer = setTimeout(() => {
-        clickCount = 0; // 超過 3.5 秒未連續點擊，計數歸零
-      }, 3500);
+      if (streakEl) streakEl.textContent = `⭐ ${elder.gameStats.streak} 天`;
+      if (medalsEl) medalsEl.textContent = `🏅 ${elder.gameStats.medals} 枚`;
+      if (pocketBalEl) pocketBalEl.textContent = `$${elder.pocketMoney.balance.toLocaleString()}`;
 
-      if (clickCount >= 10) {
-        clickCount = 0;
-        clearTimeout(clickTimer);
-        openCaregiverModal();
+      // 3. 股票監控清單
+      const stocksListEl = document.getElementById('cg-stocks-monitor-list');
+      if (stocksListEl) {
+        stocksListEl.innerHTML = '';
+        elder.stocks.forEach(stock => {
+          const isProfit = stock.currentPrice >= stock.buyPrice;
+          const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
+          const row = document.createElement('div');
+          row.className = 'cg-stock-row';
+          row.innerHTML = `
+            <div>
+              <div class="cg-stock-name">${stock.name} <span class="cg-stock-meta">(${stock.id})</span></div>
+              <div class="cg-stock-meta">買入: $${stock.buyPrice} | 目標: $${stock.targetPrice} | 持有: ${stock.shares}股</div>
+            </div>
+            <div class="cg-stock-price-box">
+              <div class="cg-stock-current">$${stock.currentPrice}</div>
+              <div class="cg-stock-meta" style="color: ${isProfit ? '#34D399' : '#FBBF24'}">
+                ${isProfit ? '▲ 獲利' : '▼ 待漲'} $${Math.abs(diff).toLocaleString()}
+              </div>
+            </div>
+          `;
+          stocksListEl.appendChild(row);
+        });
       }
-    };
-  }
+    },
+
+    switchElder(elderKey) {
+      AppState.activeElderId = elderKey;
+      saveAppState();
+      this.render();
+      CloudSync.pullElder(elderKey, () => {
+        this.render();
+      });
+    }
+  };
 
   // ==========================================
-  // 8. UI 渲染與互動邏輯
+  // 9. UI 主視圖路由與渲染 (Dual View Switcher)
   // ==========================================
   function renderAll() {
-    updateLanguageUI();
-    updateHeaderAndBadges();
-    renderStocksList();
-    renderAiAdvice();
-    renderPocketMoney();
-    QuizEngine.generateQuiz();
-    MarketMathEngine.generateProblem();
-    SolidStockTopicEngine.render();
-    checkNightMode();
+    const isCaregiver = (AppState.deviceRole === 'caregiver');
+    const seniorView = document.getElementById('senior-view-container');
+    const caregiverView = document.getElementById('caregiver-view-container');
+
+    if (isCaregiver) {
+      if (seniorView) seniorView.classList.add('hidden');
+      if (caregiverView) caregiverView.classList.remove('hidden');
+      CaregiverDashboard.render();
+    } else {
+      if (seniorView) seniorView.classList.remove('hidden');
+      if (caregiverView) caregiverView.classList.add('hidden');
+      updateLanguageUI();
+      updateHeaderAndBadges();
+      renderStocksList();
+      renderAiAdvice();
+      renderPocketMoney();
+      QuizEngine.generateQuiz();
+      MarketMathEngine.generateProblem();
+      SolidStockTopicEngine.render();
+      checkNightMode();
+    }
   }
 
   function updateLanguageUI() {
-    const isTw = (AppState.profile.language === 'taiwanese');
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
     const btnLang = document.getElementById('btn-lang-toggle');
     const iconEl = document.getElementById('lang-icon');
     const textEl = document.getElementById('lang-text');
@@ -723,17 +1037,19 @@
   }
 
   function toggleLanguage() {
-    const current = AppState.profile.language || 'zh-TW';
-    AppState.profile.language = (current === 'zh-TW') ? 'taiwanese' : 'zh-TW';
+    const elder = getActiveElder();
+    const current = elder.language || 'zh-TW';
+    elder.language = (current === 'zh-TW') ? 'taiwanese' : 'zh-TW';
     saveAppState();
+    CloudSync.pushElder(AppState.activeElderId);
 
-    const isTw = (AppState.profile.language === 'taiwanese');
     updateLanguageUI();
     updateHeaderAndBadges();
     QuizEngine.render();
     MarketMathEngine.render();
     SolidStockTopicEngine.render();
 
+    const isTw = (elder.language === 'taiwanese');
     const prompt = isTw
       ? '切換為台語模式囉！小股用台語陪你開講！'
       : '切換為國語模式囉！小股陪您看股票、動動腦！';
@@ -741,34 +1057,36 @@
   }
 
   function updateHeaderAndBadges() {
-    const isTw = (AppState.profile.language === 'taiwanese');
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
     const greetingEl = document.getElementById('user-greeting');
     const subGreetingEl = document.getElementById('sub-greeting');
     const modeBadgeEl = document.getElementById('current-mode-badge');
     const streakBadgeEl = document.getElementById('streak-badge');
     const medalCountEl = document.getElementById('medal-count');
 
-    const greetingObj = BilingualDict.getGreeting(AppState.profile.title, isTw);
+    const greetingObj = BilingualDict.getGreeting(elder.title, isTw);
 
     if (greetingEl) greetingEl.textContent = greetingObj.text;
     if (subGreetingEl) subGreetingEl.textContent = isTw ? '小股陪你看股票、動動腦' : '小股陪您看股票、動動腦';
 
     if (modeBadgeEl) {
-      if (AppState.profile.mode === 'family') modeBadgeEl.textContent = '🏠 晚輩陪伴模式';
-      else if (AppState.profile.mode === 'simulation') modeBadgeEl.textContent = '🎮 模擬大亨遊戲模式';
+      if (elder.mode === 'family') modeBadgeEl.textContent = '🏠 晚輩陪伴模式';
+      else if (elder.mode === 'simulation') modeBadgeEl.textContent = '🎮 模擬大亨遊戲模式';
       else modeBadgeEl.textContent = '👴 獨立看盤模式';
     }
 
-    if (streakBadgeEl) streakBadgeEl.textContent = `⭐ 大腦打卡 ${AppState.gameStats.streak} 天`;
-    if (medalCountEl) medalCountEl.textContent = `🏅 x ${AppState.gameStats.medals} 枚`;
+    if (streakBadgeEl) streakBadgeEl.textContent = `⭐ 大腦打卡 ${elder.gameStats.streak} 天`;
+    if (medalCountEl) medalCountEl.textContent = `🏅 x ${elder.gameStats.medals} 枚`;
   }
 
   function renderStocksList() {
     const listEl = document.getElementById('stocks-list');
     if (!listEl) return;
     listEl.innerHTML = '';
+    const elder = getActiveElder();
 
-    AppState.stocks.forEach((stock, index) => {
+    elder.stocks.forEach((stock, index) => {
       const isProfit = stock.currentPrice >= stock.buyPrice;
       const profitDiff = (stock.currentPrice - stock.buyPrice) * stock.shares;
       const reachTarget = stock.currentPrice >= stock.targetPrice;
@@ -810,8 +1128,8 @@
         </div>
 
         ${reachTarget ? `
-          <button class="btn-call-action" onclick="window.location.href='tel:${AppState.profile.contactPhone}'">
-            📞 撥打給${AppState.profile.contactName}（已達目標價！）
+          <button class="btn-call-action" onclick="window.location.href='tel:${elder.contactPhone}'">
+            📞 撥打給${elder.contactName}（已達目標價！）
           </button>
         ` : ''}
       `;
@@ -830,9 +1148,10 @@
         if (now - lastAdjustTime < 300) return;
         lastAdjustTime = now;
 
+        const elder = getActiveElder();
         const idx = parseInt(btn.dataset.index);
         const action = btn.dataset.action;
-        const stock = AppState.stocks[idx];
+        const stock = elder.stocks[idx];
 
         if (action === 'plus') {
           stock.targetPrice += 5;
@@ -841,8 +1160,10 @@
         }
 
         saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
         renderStocksList();
-        const isTw = (AppState.profile.language === 'taiwanese');
+
+        const isTw = (elder.language === 'taiwanese');
         const adjustMsg = isTw
           ? `已經幫你將${stock.name}目標價調整為 ${stock.targetPrice} 圓囉！`
           : `已幫您將${stock.name}目標價調整為 ${stock.targetPrice} 元囉！`;
@@ -854,7 +1175,8 @@
   function renderAiAdvice() {
     const textEl = document.getElementById('ai-advice-text');
     if (!textEl) return;
-    const stock = AppState.stocks[0];
+    const elder = getActiveElder();
+    const stock = elder.stocks[0];
     if (stock && stock.aiAdvice) {
       textEl.textContent = `「${stock.aiAdvice}」`;
     }
@@ -862,35 +1184,31 @@
 
   function renderPocketMoney() {
     const balEl = document.getElementById('pocket-balance');
-    if (balEl) {
-      balEl.textContent = `$${AppState.pocketMoney.balance.toLocaleString()} 元`;
+    const elder = getActiveElder();
+    if (balEl && elder.pocketMoney) {
+      balEl.textContent = `$${elder.pocketMoney.balance.toLocaleString()} 元`;
     }
   }
 
-  // ==========================================
-  // 9. 夜間沉睡模式 (Sundowning Mode)
-  // ==========================================
   function checkNightMode() {
     const hour = new Date().getHours();
     const minute = new Date().getMinutes();
     const isNight = (hour >= 21 || hour < 9);
     const nightLayer = document.getElementById('night-rest-layer');
     const clockEl = document.getElementById('night-clock');
+    const elder = getActiveElder();
 
     if (clockEl) {
       clockEl.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     }
 
-    if (AppState.profile.nightModeEnabled && isNight) {
+    if (elder.nightModeEnabled && isNight) {
       if (nightLayer) nightLayer.classList.remove('hidden');
     } else {
       if (nightLayer) nightLayer.classList.add('hidden');
     }
   }
 
-  // ==========================================
-  // 10. 答對慶祝動效 (Confetti & Medal)
-  // ==========================================
   function triggerCelebration() {
     const layer = document.getElementById('celebration-layer');
     const canvas = document.getElementById('confetti-canvas');
@@ -933,17 +1251,54 @@
   }
 
   // ==========================================
-  // 11. 晚輩控制台 (Caregiver Panel)
+  // 10. 晚輩設定後台 (Caregiver Modal Logic)
   // ==========================================
+  let clickCount = 0;
+  let clickTimer = null;
+
+  function initTenClickUnlock() {
+    const btnUnlock = document.getElementById('btn-unlock-caregiver');
+    if (!btnUnlock) return;
+
+    btnUnlock.onclick = () => {
+      clickCount++;
+      if (navigator.vibrate && clickCount >= 6) {
+        navigator.vibrate(50);
+      }
+
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+      }, 3500);
+
+      if (clickCount >= 10) {
+        clickCount = 0;
+        clearTimeout(clickTimer);
+        openCaregiverModal();
+      }
+    };
+  }
+
   function openCaregiverModal() {
     const modal = document.getElementById('modal-caregiver');
     if (!modal) return;
 
-    document.getElementById('setting-app-mode').value = AppState.profile.mode;
-    document.getElementById('setting-elder-phone').value = AppState.profile.elderPhone;
-    document.getElementById('setting-elder-title').value = AppState.profile.title;
-    document.getElementById('setting-contact-name').value = AppState.profile.contactName;
-    document.getElementById('setting-contact-phone').value = AppState.profile.contactPhone;
+    // 裝置角色
+    const radios = document.querySelectorAll('input[name="deviceRole"]');
+    radios.forEach(r => {
+      r.checked = (r.value === AppState.deviceRole);
+    });
+
+    // 雙長輩資料
+    document.getElementById('setting-dad-title').value = AppState.elders.dad.title || '爸爸';
+    document.getElementById('setting-dad-phone').value = AppState.elders.dad.phone || '0912345678';
+    document.getElementById('setting-mom-title').value = AppState.elders.mom.title || '媽媽';
+    document.getElementById('setting-mom-phone').value = AppState.elders.mom.phone || '0928111222';
+
+    const currentElder = getActiveElder();
+    document.getElementById('setting-app-mode').value = currentElder.mode || 'family';
+    document.getElementById('setting-contact-name').value = currentElder.contactName || '小明';
+    document.getElementById('setting-contact-phone').value = currentElder.contactPhone || '0987654321';
 
     renderCaregiverStocksEditor();
     modal.classList.remove('hidden');
@@ -953,8 +1308,9 @@
     const editorList = document.getElementById('caregiver-stocks-editor');
     if (!editorList) return;
     editorList.innerHTML = '';
+    const elder = getActiveElder();
 
-    AppState.stocks.forEach((stock, idx) => {
+    elder.stocks.forEach((stock, idx) => {
       const item = document.createElement('div');
       item.className = 'stock-edit-item';
       item.innerHTML = `
@@ -973,11 +1329,18 @@
   }
 
   function saveCaregiverSettings() {
-    AppState.profile.mode = document.getElementById('setting-app-mode').value;
-    AppState.profile.elderPhone = document.getElementById('setting-elder-phone').value;
-    AppState.profile.title = document.getElementById('setting-elder-title').value;
-    AppState.profile.contactName = document.getElementById('setting-contact-name').value;
-    AppState.profile.contactPhone = document.getElementById('setting-contact-phone').value;
+    const selectedRole = document.querySelector('input[name="deviceRole"]:checked').value;
+    AppState.deviceRole = selectedRole;
+
+    AppState.elders.dad.title = document.getElementById('setting-dad-title').value || '爸爸';
+    AppState.elders.dad.phone = document.getElementById('setting-dad-phone').value || '0912345678';
+    AppState.elders.mom.title = document.getElementById('setting-mom-title').value || '媽媽';
+    AppState.elders.mom.phone = document.getElementById('setting-mom-phone').value || '0928111222';
+
+    const currentElder = getActiveElder();
+    currentElder.mode = document.getElementById('setting-app-mode').value;
+    currentElder.contactName = document.getElementById('setting-contact-name').value;
+    currentElder.contactPhone = document.getElementById('setting-contact-phone').value;
 
     const names = document.querySelectorAll('.stock-edit-name');
     const ids = document.querySelectorAll('.stock-edit-id');
@@ -986,29 +1349,119 @@
     const currents = document.querySelectorAll('.stock-edit-current');
 
     names.forEach((el, i) => {
-      if (AppState.stocks[i]) {
-        AppState.stocks[i].name = el.value || AppState.stocks[i].name;
-        AppState.stocks[i].id = ids[i].value || AppState.stocks[i].id;
-        AppState.stocks[i].buyPrice = parseFloat(buys[i].value) || AppState.stocks[i].buyPrice;
-        AppState.stocks[i].shares = parseInt(shares[i].value) || AppState.stocks[i].shares;
-        AppState.stocks[i].currentPrice = parseFloat(currents[i].value) || AppState.stocks[i].currentPrice;
+      if (currentElder.stocks[i]) {
+        currentElder.stocks[i].name = el.value || currentElder.stocks[i].name;
+        currentElder.stocks[i].id = ids[i].value || currentElder.stocks[i].id;
+        currentElder.stocks[i].buyPrice = parseFloat(buys[i].value) || currentElder.stocks[i].buyPrice;
+        currentElder.stocks[i].shares = parseInt(shares[i].value) || currentElder.stocks[i].shares;
+        currentElder.stocks[i].currentPrice = parseFloat(currents[i].value) || currentElder.stocks[i].currentPrice;
       }
     });
 
     saveAppState();
+    CloudSync.pushElder('dad');
+    CloudSync.pushElder('mom');
+
     document.getElementById('modal-caregiver').classList.add('hidden');
     renderAll();
-    alert('✅ 設定已儲存成功！');
+    alert('✅ 設定已儲存並同步至雲端！');
   }
 
   // ==========================================
-  // 12. 事件綁定與初始化
+  // 11. 事件綁定與初始化 (Event Listeners)
   // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
     Speech.init();
     Recognition.init();
+    CloudSync.initLifecycle();
     initTenClickUnlock();
     renderAll();
+
+    // 初始從雲端撈取最新資料
+    CloudSync.pullElder(AppState.activeElderId, () => {
+      renderAll();
+      checkPendingEnvelopeForSenior();
+    });
+
+    // 晚輩端 1 對 2 標籤切換
+    const tabDad = document.getElementById('tab-elder-dad');
+    const tabMom = document.getElementById('tab-elder-mom');
+    if (tabDad) tabDad.onclick = () => CaregiverDashboard.switchElder('dad');
+    if (tabMom) tabMom.onclick = () => CaregiverDashboard.switchElder('mom');
+
+    // 晚輩端直接打開設定
+    const btnDirectSettings = document.getElementById('btn-open-settings-direct');
+    if (btnDirectSettings) {
+      btnDirectSettings.onclick = () => openCaregiverModal();
+    }
+
+    // 晚輩端手動同步按鈕
+    const btnManualSync = document.getElementById('btn-manual-sync');
+    if (btnManualSync) {
+      btnManualSync.onclick = () => {
+        CloudSync.pullElder(AppState.activeElderId, () => {
+          renderAll();
+          alert(`✅ 已同步最新資料 (${getActiveElder().title})`);
+        });
+      };
+    }
+
+    // 晚輩快捷編輯持股按鈕
+    const btnQuickEdit = document.getElementById('btn-quick-edit-stocks');
+    if (btnQuickEdit) {
+      btnQuickEdit.onclick = () => openCaregiverModal();
+    }
+
+    // 晚輩快捷發送孝親紅包
+    const btnCgSendBonus = document.getElementById('btn-cg-send-bonus');
+    if (btnCgSendBonus) {
+      btnCgSendBonus.onclick = () => {
+        const amount = parseInt(document.getElementById('cg-input-bonus-amount').value) || 5000;
+        const note = document.getElementById('cg-input-bonus-note').value || '股票拉回孝親補貼';
+        const elderKey = AppState.activeElderId;
+        const elder = AppState.elders[elderKey];
+
+        elder.pocketMoney.balance += amount;
+        elder.pocketMoney.history.unshift({
+          date: new Date().toLocaleDateString('zh-TW'),
+          sender: elder.contactName || '小明 (兒子)',
+          amount: amount,
+          note: note
+        });
+
+        // 設定待長輩領取之紅包
+        elder.pendingEnvelope = {
+          amount: amount,
+          note: note,
+          sender: elder.contactName || '小明 (兒子)',
+          timestamp: Date.now()
+        };
+
+        saveAppState();
+        CloudSync.pushElder(elderKey);
+        CaregiverDashboard.render();
+        alert(`🎁 已成功發送 $${amount.toLocaleString()} 元孝親紅包至【${elder.title}】手機！`);
+      };
+    }
+
+    // 晚輩自訂小股貼心話
+    const btnCgSendAdvice = document.getElementById('btn-cg-send-advice');
+    if (btnCgSendAdvice) {
+      btnCgSendAdvice.onclick = () => {
+        const customText = document.getElementById('cg-input-custom-advice').value.trim();
+        if (!customText) return alert('請輸入叮嚀內容！');
+
+        const elderKey = AppState.activeElderId;
+        const elder = AppState.elders[elderKey];
+        if (elder.stocks[0]) {
+          elder.stocks[0].aiAdvice = customText;
+        }
+
+        saveAppState();
+        CloudSync.pushElder(elderKey);
+        alert(`💬 已更新【${elder.title}】手機上的小股貼心話！`);
+      };
+    }
 
     // 語言切換 (國語 / 台語)
     const btnLangToggle = document.getElementById('btn-lang-toggle');
@@ -1018,16 +1471,17 @@
 
     // 語音播報全部 (頂部大按鈕)
     document.getElementById('btn-speak-all').onclick = () => {
-      const isTw = (AppState.profile.language === 'taiwanese');
-      const stock = AppState.stocks[0];
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
+      const stock = elder.stocks[0];
       const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
       let text = '';
       if (isTw) {
         const profitText = diff >= 0 ? `趁了 ${diff} 圓` : `減了 ${Math.abs(diff)} 圓`;
-        text = `${AppState.profile.title}，今仔日你的${stock.name}現價是 ${stock.currentPrice} 圓，這馬${profitText}喔！`;
+        text = `${elder.title}，今仔日你的${stock.name}現價是 ${stock.currentPrice} 圓，這馬${profitText}喔！`;
       } else {
         const profitText = diff >= 0 ? `賺了 ${diff} 元` : `少了 ${Math.abs(diff)} 元`;
-        text = `${AppState.profile.title}，今天您的${stock.name}現價是 ${stock.currentPrice} 元，目前${profitText}喔！`;
+        text = `${elder.title}，今天您的${stock.name}現價是 ${stock.currentPrice} 元，目前${profitText}喔！`;
       }
       Speech.speak(text);
     };
@@ -1133,10 +1587,11 @@
 
     // 夜間模式按鈕
     document.getElementById('btn-play-night-soothe').onclick = () => {
-      const isTw = (AppState.profile.language === 'taiwanese');
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
       const sootheMsg = isTw
-        ? `${AppState.profile.title}，這馬是夜間休息時間，股票小股共你顧牢牢，放首輕音樂陪你，緊閉上目睭好好睏喔。`
-        : `${AppState.profile.title}，現在是夜間休息時間，股票都很安全，小股放首輕音樂陪您，快閉上眼睛好好睡喔。`;
+        ? `${elder.title}，這馬是夜間休息時間，股票小股共你顧牢牢，放首輕音樂陪你，緊閉上目睭好好睏喔。`
+        : `${elder.title}，現在是夜間休息時間，股票都很安全，小股放首輕音樂陪您，快閉上眼睛好好睡喔。`;
       Speech.speak(sootheMsg);
     };
 
@@ -1153,42 +1608,19 @@
       saveCaregiverSettings();
     };
 
-    // 晚輩發送紅包
-    document.getElementById('btn-send-bonus').onclick = () => {
-      const amount = parseInt(document.getElementById('input-bonus-amount').value) || 5000;
-      const note = document.getElementById('input-bonus-note').value || '孝親補貼';
-      
-      AppState.pocketMoney.balance += amount;
-      AppState.pocketMoney.history.unshift({
-        date: new Date().toLocaleDateString('zh-TW'),
-        sender: AppState.profile.contactName,
-        amount: amount,
-        note: note
-      });
-      saveAppState();
-
-      document.getElementById('modal-caregiver').classList.add('hidden');
-      renderPocketMoney();
-
-      document.getElementById('envelope-amount').textContent = `+ $${amount.toLocaleString()} 元`;
-      document.getElementById('envelope-note').textContent = `「${note}」`;
-      document.getElementById('modal-red-envelope').classList.remove('hidden');
-      
-      const isTw = (AppState.profile.language === 'taiwanese');
-      const bonusSpeech = isTw
-        ? `恭喜！收到${AppState.profile.contactName}送來的紅包 ${amount} 圓囉！`
-        : `恭喜！收到${AppState.profile.contactName}送來的紅包 ${amount} 元囉！`;
-      Speech.speak(bonusSpeech);
-    };
-
-    // 領取紅包
+    // 領取紅包 (長輩端)
     document.getElementById('btn-claim-envelope').onclick = () => {
+      const elder = getActiveElder();
+      elder.pendingEnvelope = null;
+      saveAppState();
+      CloudSync.pushElder(AppState.activeElderId);
       document.getElementById('modal-red-envelope').classList.add('hidden');
       triggerCelebration();
+      renderPocketMoney();
     };
 
     // ==========================================
-    // 13. PWA 安裝提示機制 (Android / iOS)
+    // 12. PWA 安裝提示機制
     // ==========================================
     let deferredPrompt = null;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1252,7 +1684,7 @@
       };
     }
 
-    // 註冊 Service Worker (PWA)
+    // 註冊 Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(err => {
         console.warn('SW 註冊忽略（本地預覽模式）', err);

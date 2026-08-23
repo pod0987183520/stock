@@ -1209,6 +1209,278 @@ body {
   cursor: pointer;
 }
 
+/* ==========================================
+   晚輩端 1 對 2 (爸爸/媽媽) 關懷儀表板專屬樣式
+   ========================================== */
+
+.caregiver-elder-switcher {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.elder-tab-group {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.btn-elder-tab {
+  flex: 1;
+  min-height: 64px;
+  background: #152243;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  color: #94A3B8;
+  font-size: 24px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-elder-tab.active {
+  background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);
+  border: 3px solid #818CF8;
+  color: #FEF08A;
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.elder-tab-emoji {
+  font-size: 28px;
+}
+
+.btn-config-gear {
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #E2E8F0;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* 雲端同步狀態橫幅 */
+.cloud-status-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cloud-status-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.dot-online {
+  background: #10B981;
+  box-shadow: 0 0 10px #10B981;
+  animation: pulseDot 2s infinite;
+}
+
+.dot-syncing {
+  background: #F59E0B;
+  box-shadow: 0 0 10px #F59E0B;
+  animation: pulseDot 0.8s infinite;
+}
+
+.dot-offline {
+  background: #64748B;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.status-label {
+  font-size: 19px;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+
+.btn-sync-action {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid #38BDF8;
+  color: #38BDF8;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.btn-sync-action:active {
+  background: #38BDF8;
+  color: #000000;
+}
+
+/* 晚輩卡片區塊 */
+.caregiver-card-section {
+  margin-bottom: 22px;
+}
+
+.caregiver-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.caregiver-section-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.elder-phone-badge {
+  font-size: 18px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  color: var(--color-accent);
+}
+
+.cg-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.cg-stat-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cg-stat-label {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.cg-stat-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.cg-stat-value.val-done {
+  color: #34D399;
+}
+
+.cg-stat-value.val-pending {
+  color: #FBBF24;
+}
+
+.cg-stat-value.val-gold {
+  color: var(--color-gold);
+}
+
+/* 晚輩持股即時監控清單 */
+.cg-stocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cg-stock-row {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cg-stock-name {
+  font-size: 24px;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.cg-stock-meta {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.cg-stock-price-box {
+  text-align: right;
+}
+
+.cg-stock-current {
+  font-size: 28px;
+  font-weight: 900;
+  color: #FEF08A;
+}
+
+.btn-small-action {
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #F8FAFC;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.btn-send-bonus-large {
+  width: 100%;
+  min-height: 60px;
+  background: linear-gradient(135deg, #EF4444, #B91C1C);
+  border: 2px solid #FCA5A5;
+  color: #FFFFFF;
+  font-size: 24px;
+  font-weight: 900;
+  border-radius: var(--radius-md);
+  margin-top: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+}
+
+.btn-send-bonus-large:active {
+  transform: scale(0.97);
+}
+
+/* 雙長輩分組欄位 */
+.dual-elder-group {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px;
+  border-radius: var(--radius-md);
+}
+
 /* 輔助工具類別 */
 .hidden {
   display: none !important;
@@ -1241,3 +1513,4 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
 }
+
