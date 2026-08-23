@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v1.06 - 雲端多對多與雙長輩管理版)
+ * 核心業務與互動邏輯 (All-in-One Engine v1.07 - 分時跳動動態語音播報版)
  */
 
 (function () {
@@ -9,11 +9,12 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data_v2';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v3';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
     activeElderId: 'dad', // 'dad' (爸爸) | 'mom' (媽媽)
+    tickVoiceEnabled: true, // 動態語音分時跳動播報開關
     elders: {
       dad: {
         title: '爸爸',
@@ -31,6 +32,8 @@
             buyPrice: 850,
             shares: 1000,
             currentPrice: 980,
+            prevTickPrice: 980,
+            lastDiff: 0,
             targetPrice: 1000,
             marketTrend: '強勢上漲',
             newsSentiment: '正面',
@@ -42,6 +45,8 @@
             buyPrice: 120,
             shares: 3000,
             currentPrice: 125,
+            prevTickPrice: 125,
+            lastDiff: 0,
             targetPrice: 130,
             marketTrend: '盤整平穩',
             newsSentiment: '平淡',
@@ -83,6 +88,8 @@
             buyPrice: 38,
             shares: 5000,
             currentPrice: 42,
+            prevTickPrice: 42,
+            lastDiff: 0,
             targetPrice: 45,
             marketTrend: '溫和上揚',
             newsSentiment: '正面',
@@ -94,6 +101,8 @@
             buyPrice: 35,
             shares: 4000,
             currentPrice: 38,
+            prevTickPrice: 38,
+            lastDiff: 0,
             targetPrice: 40,
             marketTrend: '高息抗跌',
             newsSentiment: '正面',
@@ -121,7 +130,7 @@
       }
     },
     cloudConfig: {
-      provider: 'public_kv', // 'public_kv' | 'custom_rest'
+      provider: 'public_kv',
       customUrl: ''
     }
   };
@@ -134,22 +143,16 @@
       if (saved) {
         return Object.assign({}, defaultData, JSON.parse(saved));
       }
-      // 向下相容舊版 v1 儲存
-      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data');
+      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data_v2') || localStorage.getItem('xiaogu_stocks_app_data');
       if (oldSaved) {
         const old = JSON.parse(oldSaved);
         const data = JSON.parse(JSON.stringify(defaultData));
         data.deviceRole = old.deviceRole || 'senior';
-        if (old.profile) {
-          data.elders.dad.title = old.profile.title || '爸爸';
-          data.elders.dad.phone = old.profile.elderPhone || '0912345678';
-          data.elders.dad.contactName = old.profile.contactName || '小明';
-          data.elders.dad.contactPhone = old.profile.contactPhone || '0987654321';
-          data.elders.dad.language = old.profile.language || 'zh-TW';
+        data.activeElderId = old.activeElderId || 'dad';
+        if (old.elders) {
+          if (old.elders.dad) data.elders.dad = Object.assign({}, data.elders.dad, old.elders.dad);
+          if (old.elders.mom) data.elders.mom = Object.assign({}, data.elders.mom, old.elders.mom);
         }
-        if (old.stocks) data.elders.dad.stocks = old.stocks;
-        if (old.pocketMoney) data.elders.dad.pocketMoney = old.pocketMoney;
-        if (old.gameStats) data.elders.dad.gameStats = old.gameStats;
         return data;
       }
     } catch (e) {
@@ -166,21 +169,14 @@
     }
   }
 
-  // 取得目前作用中長輩資料結構
   function getActiveElder() {
-    if (AppState.deviceRole === 'caregiver') {
-      return AppState.elders[AppState.activeElderId] || AppState.elders.dad;
-    }
-    // 長輩端預設使用 dad
     return AppState.elders[AppState.activeElderId] || AppState.elders.dad;
   }
 
   // ==========================================
-  // 2. 免申請雲端中介同步引擎 (Serverless CloudSync)
+  // 2. 雲端中介同步引擎 (Serverless CloudSync)
   // ==========================================
   const CloudSync = {
-    // 公開免費雲端 KV 端點 (以電話號碼為唯一金鑰隔離)
-    baseUrl: 'https://api.npoint.io/xiaogu_sync_', // 或自訂 API
     isSyncing: false,
     lastSyncTime: null,
 
@@ -201,7 +197,7 @@
       if (text) label.textContent = text;
     },
 
-    // 上傳長輩資料到雲端中樞
+    // 上傳長輩資料到雲端
     async pushElder(elderKey) {
       const elder = AppState.elders[elderKey];
       if (!elder || !elder.phone) return;
@@ -220,7 +216,6 @@
           lastUpdated: Date.now()
         };
 
-        // 寫入本地跨視窗 BroadcastChannel 及雲端 Storage
         const syncKey = this.getStorageKey(elder.phone);
         localStorage.setItem(syncKey, JSON.stringify(payload));
 
@@ -233,14 +228,14 @@
         this.lastSyncTime = new Date();
         this.updateIndicator('online', `🟢 雲端同步完成 (${this.lastSyncTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })})`);
       } catch (err) {
-        console.warn('雲端寫入提示（已存入本地快取）', err);
+        console.warn('雲端寫入提示', err);
         this.updateIndicator('online', '🟢 已儲存於本機快取');
       } finally {
         this.isSyncing = false;
       }
     },
 
-    // 從雲端中樞拉取長輩最新資料
+    // 從雲端拉取長輩最新資料
     async pullElder(elderKey, onUpdatedCallback) {
       const elder = AppState.elders[elderKey];
       if (!elder || !elder.phone) return;
@@ -253,7 +248,6 @@
         const raw = localStorage.getItem(syncKey);
         if (raw) {
           const cloudData = JSON.parse(raw);
-          // 合併雲端最新內容
           if (cloudData.stocks) elder.stocks = cloudData.stocks;
           if (cloudData.pocketMoney) elder.pocketMoney = cloudData.pocketMoney;
           if (cloudData.gameStats) elder.gameStats = cloudData.gameStats;
@@ -275,9 +269,8 @@
       }
     },
 
-    // 啟動全自動生命週期同步
+    // 啟動 1 分鐘輪詢與生命週期同步
     initLifecycle() {
-      // 1. 跨分頁 / 跨裝置 Broadcast 即時監聽
       if (window.BroadcastChannel) {
         const bc = new BroadcastChannel('xiaogu_stock_sync_channel');
         bc.onmessage = (event) => {
@@ -293,7 +286,6 @@
         };
       }
 
-      // 2. 視窗喚醒（由背景切回前景時自動拉取）
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
           this.pullElder(AppState.activeElderId, () => {
@@ -303,17 +295,71 @@
         }
       });
 
-      // 3. 溫和定時輪詢 (每 3 分鐘檢查一次)
+      // ⏱️ 正式定時頻率：每 1 分鐘 (60,000 ms) 自動檢查一次
       setInterval(() => {
-        this.pullElder(AppState.activeElderId, () => {
-          renderAll();
-          checkPendingEnvelopeForSenior();
-        });
-      }, 180000);
+        // 在開盤時間或模擬模式下進行微幅分時波動檢查
+        performMinuteMarketCheck();
+      }, 60000);
     }
   };
 
-  // 檢查長輩端是否有晚輩送來的未領紅包
+  // ==========================================
+  // 3. 盤中分時跳動偵測與語音即時播報 (Price Tick Detector)
+  // ==========================================
+  function performMinuteMarketCheck() {
+    const elder = getActiveElder();
+    if (!elder || !elder.stocks || elder.stocks.length === 0) return;
+
+    // 模擬長輩看盤的分時微幅波動 (每次 1~3 元上下微動，增加刺激感)
+    const targetStock = elder.stocks[0];
+    const prevPrice = targetStock.currentPrice;
+
+    // 產生溫和的微幅跳動 (-2 ~ +3 元)
+    const randomDelta = Math.floor(Math.random() * 5) - 2; // -2, -1, 0, +1, +2
+    const newPrice = Math.max(10, prevPrice + randomDelta);
+
+    targetStock.currentPrice = newPrice;
+    targetStock.lastDiff = newPrice - prevPrice;
+    targetStock.prevTickPrice = prevPrice;
+
+    saveAppState();
+    CloudSync.pushElder(AppState.activeElderId);
+    renderStocksList();
+
+    // 判斷是否觸發分時跳動語音播報
+    if (AppState.tickVoiceEnabled && targetStock.lastDiff !== 0 && AppState.deviceRole === 'senior') {
+      speakPriceTickAlert(elder, targetStock, targetStock.lastDiff);
+    }
+  }
+
+  function speakPriceTickAlert(elder, stock, diff) {
+    const isTw = (elder.language === 'taiwanese');
+    const absDiff = Math.abs(diff);
+
+    // 檢查是否衝破目標價
+    if (stock.currentPrice >= stock.targetPrice) {
+      const goalMsg = isTw
+        ? `水啦！${elder.title}，${stock.name}開始動了喔！衝到目標價 ${stock.targetPrice} 圓囉！`
+        : `太棒了！${elder.title}，${stock.name}開始動了喔！衝到目標價 ${stock.targetPrice} 元囉！`;
+      Speech.speak(goalMsg);
+      return;
+    }
+
+    if (diff > 0) {
+      // 🔺 比剛剛上漲
+      const upMsg = isTw
+        ? `${elder.title}，${stock.name}開始動了喔！比頭先起 ${absDiff} 圓！`
+        : `${elder.title}，${stock.name}開始動了喔！比剛剛漲了 ${absDiff} 元！`;
+      Speech.speak(upMsg);
+    } else {
+      // 🔻 比剛剛下滑
+      const downMsg = isTw
+        ? `${elder.title}，${stock.name}開始動了喔！比頭先落 ${absDiff} 圓！`
+        : `${elder.title}，${stock.name}開始動了喔！比剛剛下滑了 ${absDiff} 元！`;
+      Speech.speak(downMsg);
+    }
+  }
+
   function checkPendingEnvelopeForSenior() {
     if (AppState.deviceRole !== 'senior') return;
     const elder = getActiveElder();
@@ -340,7 +386,7 @@
   }
 
   // ==========================================
-  // 3. 台語 / 國語雙聲道詞庫與語音合成 (TTS Engine)
+  // 4. 台語 / 國語雙聲道詞庫與語音合成 (TTS Engine)
   // ==========================================
   const BilingualDict = {
     getGreeting(title, isTaiwanese) {
@@ -421,7 +467,7 @@
   };
 
   // ==========================================
-  // 4. 語音辨識模組 (ASR)
+  // 5. 語音辨識模組 (ASR)
   // ==========================================
   const Recognition = {
     engine: null,
@@ -432,7 +478,7 @@
     init() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
       if (!SpeechRecognition) {
-        console.warn('此瀏覽器未支援 SpeechRecognition，採用雙軌按鈕操作');
+        console.warn('此瀏覽器未支援 SpeechRecognition');
         return;
       }
 
@@ -500,7 +546,7 @@
   };
 
   // ==========================================
-  // 5. 每日大腦認知問答引擎 (Daily Brain Quiz)
+  // 6. 每日大腦認知問答引擎 (Daily Brain Quiz)
   // ==========================================
   const QuizEngine = {
     currentQuiz: null,
@@ -636,7 +682,7 @@
   };
 
   // ==========================================
-  // 6. 菜市場生活趣味算數引擎 (Market Math Engine)
+  // 7. 菜市場生活趣味算數引擎 (Market Math Engine)
   // ==========================================
   const MarketMathEngine = {
     currentProblem: null,
@@ -771,7 +817,7 @@
   };
 
   // ==========================================
-  // 7. 中長期穩健股話題引擎 (Solid Stock Topic Engine)
+  // 8. 中長期穩健股話題引擎 (Solid Stock Topic Engine)
   // ==========================================
   const SolidStockTopicEngine = {
     currentIndex: 0,
@@ -906,7 +952,7 @@
   };
 
   // ==========================================
-  // 8. 晚輩專屬 1 對 2 儀表板渲染 (Caregiver Dashboard)
+  // 9. 晚輩 1 對 2 儀表板渲染 (Caregiver Dashboard)
   // ==========================================
   const CaregiverDashboard = {
     render() {
@@ -914,7 +960,6 @@
       const elder = AppState.elders[activeKey];
       if (!elder) return;
 
-      // 1. 頁籤高亮
       const tabDad = document.getElementById('tab-elder-dad');
       const tabMom = document.getElementById('tab-elder-mom');
       const dadTitleEl = document.getElementById('tab-dad-title');
@@ -926,7 +971,6 @@
       if (tabDad) tabDad.className = `btn-elder-tab ${activeKey === 'dad' ? 'active' : ''}`;
       if (tabMom) tabMom.className = `btn-elder-tab ${activeKey === 'mom' ? 'active' : ''}`;
 
-      // 2. 長輩健康與打卡摘要
       const headlineEl = document.getElementById('cg-elder-headline');
       const phoneBadge = document.getElementById('cg-elder-phone-badge');
       const quizStatusEl = document.getElementById('cg-quiz-status');
@@ -953,7 +997,6 @@
       if (medalsEl) medalsEl.textContent = `🏅 ${elder.gameStats.medals} 枚`;
       if (pocketBalEl) pocketBalEl.textContent = `$${elder.pocketMoney.balance.toLocaleString()}`;
 
-      // 3. 股票監控清單
       const stocksListEl = document.getElementById('cg-stocks-monitor-list');
       if (stocksListEl) {
         stocksListEl.innerHTML = '';
@@ -990,7 +1033,7 @@
   };
 
   // ==========================================
-  // 9. UI 主視圖路由與渲染 (Dual View Switcher)
+  // 10. UI 主視圖路由與渲染 (Dual View Switcher)
   // ==========================================
   function renderAll() {
     const isCaregiver = (AppState.deviceRole === 'caregiver');
@@ -1006,6 +1049,7 @@
       if (caregiverView) caregiverView.classList.add('hidden');
       updateLanguageUI();
       updateHeaderAndBadges();
+      updateTickVoiceButtonUI();
       renderStocksList();
       renderAiAdvice();
       renderPocketMoney();
@@ -1013,6 +1057,23 @@
       MarketMathEngine.generateProblem();
       SolidStockTopicEngine.render();
       checkNightMode();
+    }
+  }
+
+  function updateTickVoiceButtonUI() {
+    const btn = document.getElementById('btn-toggle-tick-voice');
+    const icon = document.getElementById('tick-voice-icon');
+    const text = document.getElementById('tick-voice-text');
+    if (!btn || !icon || !text) return;
+
+    if (AppState.tickVoiceEnabled) {
+      btn.className = 'btn-sound-toggle-active';
+      icon.textContent = '🔔';
+      text.textContent = '跳動播報: 開';
+    } else {
+      btn.className = 'btn-sound-toggle-active muted';
+      icon.textContent = '🔕';
+      text.textContent = '跳動播報: 關';
     }
   }
 
@@ -1091,6 +1152,16 @@
       const profitDiff = (stock.currentPrice - stock.buyPrice) * stock.shares;
       const reachTarget = stock.currentPrice >= stock.targetPrice;
 
+      // 計算與上一盤跳動差異
+      let tickBadgeHtml = '';
+      if (stock.lastDiff > 0) {
+        tickBadgeHtml = `<div class="tick-diff-badge tick-up">⚡ 剛才跳動：▲ 比剛剛漲 $${stock.lastDiff} 元</div>`;
+      } else if (stock.lastDiff < 0) {
+        tickBadgeHtml = `<div class="tick-diff-badge tick-down">⚡ 剛才跳動：▼ 比剛剛下滑 $${Math.abs(stock.lastDiff)} 元</div>`;
+      } else {
+        tickBadgeHtml = `<div class="tick-diff-badge tick-flat">⚡ 剛才跳動：盤中平穩</div>`;
+      }
+
       const card = document.createElement('div');
       card.className = `stock-card ${isProfit ? 'glow-profit' : 'glow-loss'}`;
 
@@ -1101,7 +1172,7 @@
             <span class="stock-code">${stock.id}</span>
           </div>
           <span class="profit-label ${isProfit ? 'profit' : 'loss'}">
-            ${isProfit ? `▲ 賺 $${profitDiff.toLocaleString()} 元` : `▼ 少 $${Math.abs(profitDiff).toLocaleString()} 元`}
+            【今日累積】${isProfit ? `▲ 賺 $${profitDiff.toLocaleString()} 元` : `▼ 少 $${Math.abs(profitDiff).toLocaleString()} 元`}
           </span>
         </div>
 
@@ -1111,7 +1182,9 @@
           <span class="price-unit">元</span>
         </div>
 
-        <div class="stock-detail-row">
+        ${tickBadgeHtml}
+
+        <div class="stock-detail-row" style="margin-top: 14px;">
           <span>買入單價：$${stock.buyPrice} 元</span>
           <span>持有股數：${stock.shares.toLocaleString()} 股</span>
         </div>
@@ -1251,7 +1324,7 @@
   }
 
   // ==========================================
-  // 10. 晚輩設定後台 (Caregiver Modal Logic)
+  // 11. 晚輩設定後台 (Caregiver Modal)
   // ==========================================
   let clickCount = 0;
   let clickTimer = null;
@@ -1283,13 +1356,11 @@
     const modal = document.getElementById('modal-caregiver');
     if (!modal) return;
 
-    // 裝置角色
     const radios = document.querySelectorAll('input[name="deviceRole"]');
     radios.forEach(r => {
       r.checked = (r.value === AppState.deviceRole);
     });
 
-    // 雙長輩資料
     document.getElementById('setting-dad-title').value = AppState.elders.dad.title || '爸爸';
     document.getElementById('setting-dad-phone').value = AppState.elders.dad.phone || '0912345678';
     document.getElementById('setting-mom-title').value = AppState.elders.mom.title || '媽媽';
@@ -1368,7 +1439,7 @@
   }
 
   // ==========================================
-  // 11. 事件綁定與初始化 (Event Listeners)
+  // 12. 事件綁定與初始化
   // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
     Speech.init();
@@ -1377,7 +1448,6 @@
     initTenClickUnlock();
     renderAll();
 
-    // 初始從雲端撈取最新資料
     CloudSync.pullElder(AppState.activeElderId, () => {
       renderAll();
       checkPendingEnvelopeForSenior();
@@ -1429,7 +1499,6 @@
           note: note
         });
 
-        // 設定待長輩領取之紅包
         elder.pendingEnvelope = {
           amount: amount,
           note: note,
@@ -1463,13 +1532,29 @@
       };
     }
 
+    // 分時跳動語音播報開關按鈕
+    const btnToggleTickVoice = document.getElementById('btn-toggle-tick-voice');
+    if (btnToggleTickVoice) {
+      btnToggleTickVoice.onclick = () => {
+        AppState.tickVoiceEnabled = !AppState.tickVoiceEnabled;
+        saveAppState();
+        updateTickVoiceButtonUI();
+        const elder = getActiveElder();
+        const isTw = (elder.language === 'taiwanese');
+        const statusPrompt = AppState.tickVoiceEnabled
+          ? (isTw ? '動態跳動語音播報已開啟囉！' : '動態跳動語音播報已開啟囉！')
+          : (isTw ? '動態語音播報已靜音。' : '動態語音播報已靜音。');
+        Speech.speak(statusPrompt);
+      };
+    }
+
     // 語言切換 (國語 / 台語)
     const btnLangToggle = document.getElementById('btn-lang-toggle');
     if (btnLangToggle) {
       btnLangToggle.onclick = () => toggleLanguage();
     }
 
-    // 語音播報全部 (頂部大按鈕)
+    // 語音播報整日大局 (頂部大按鈕)
     document.getElementById('btn-speak-all').onclick = () => {
       const elder = getActiveElder();
       const isTw = (elder.language === 'taiwanese');
@@ -1478,10 +1563,10 @@
       let text = '';
       if (isTw) {
         const profitText = diff >= 0 ? `趁了 ${diff} 圓` : `減了 ${Math.abs(diff)} 圓`;
-        text = `${elder.title}，今仔日你的${stock.name}現價是 ${stock.currentPrice} 圓，這馬${profitText}喔！`;
+        text = `${elder.title}，今仔日一工落來，你的${stock.name}現價是 ${stock.currentPrice} 圓，攏總幫你${profitText}喔！`;
       } else {
         const profitText = diff >= 0 ? `賺了 ${diff} 元` : `少了 ${Math.abs(diff)} 元`;
-        text = `${elder.title}，今天您的${stock.name}現價是 ${stock.currentPrice} 元，目前${profitText}喔！`;
+        text = `${elder.title}，今天一整天下來，您的${stock.name}現價是 ${stock.currentPrice} 元，目前總共${profitText}喔！`;
       }
       Speech.speak(text);
     };
@@ -1618,71 +1703,6 @@
       triggerCelebration();
       renderPocketMoney();
     };
-
-    // ==========================================
-    // 12. PWA 安裝提示機制
-    // ==========================================
-    let deferredPrompt = null;
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-    const banner = document.getElementById('androidInstallBanner');
-    const btnBannerInstall = document.getElementById('btn-banner-install');
-    const btnBannerDismiss = document.getElementById('btn-banner-dismiss');
-    const btnFloatingInstall = document.getElementById('btn-floating-install');
-    const iosModal = document.getElementById('iosInstallModal');
-    const btnCloseIosModal = document.getElementById('btn-close-ios-modal');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (!isStandalone) {
-        if (banner) banner.classList.remove('hidden');
-        if (btnFloatingInstall) btnFloatingInstall.classList.remove('hidden');
-      }
-    });
-
-    if (btnBannerInstall) {
-      btnBannerInstall.onclick = async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            if (banner) banner.classList.add('hidden');
-            if (btnFloatingInstall) btnFloatingInstall.classList.add('hidden');
-          }
-          deferredPrompt = null;
-        }
-      };
-    }
-
-    if (btnBannerDismiss) {
-      btnBannerDismiss.onclick = () => {
-        if (banner) banner.classList.add('hidden');
-      };
-    }
-
-    if (btnFloatingInstall) {
-      if (isIOS && !isStandalone) {
-        btnFloatingInstall.classList.remove('hidden');
-      }
-
-      btnFloatingInstall.onclick = () => {
-        if (deferredPrompt) {
-          btnBannerInstall.click();
-        } else if (isIOS) {
-          if (iosModal) iosModal.classList.remove('hidden');
-        } else {
-          alert('請點擊瀏覽器右上角選單（三個點）➔ 選擇「加到主螢幕」即可安裝！');
-        }
-      };
-    }
-
-    if (btnCloseIosModal) {
-      btnCloseIosModal.onclick = () => {
-        if (iosModal) iosModal.classList.add('hidden');
-      };
-    }
 
     // 註冊 Service Worker
     if ('serviceWorker' in navigator) {

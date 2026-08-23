@@ -293,12 +293,69 @@ body {
   color: var(--color-gold);
 }
 
-/* 區塊標題 */
+/* 區塊標題列 */
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 .section-title {
   font-size: var(--font-title);
   font-weight: 800;
-  margin-bottom: 16px;
   color: var(--text-primary);
+}
+
+.btn-sound-toggle-active {
+  background: rgba(56, 189, 248, 0.15);
+  border: 2px solid #38BDF8;
+  color: #38BDF8;
+  font-size: 19px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-sound-toggle-active.muted {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #64748B;
+  color: #94A3B8;
+}
+
+/* 分時跳動微標籤 */
+.tick-diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  margin-top: 6px;
+}
+
+.tick-up {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34D399;
+  border: 1px solid #10B981;
+}
+
+.tick-down {
+  background: rgba(245, 158, 11, 0.25);
+  color: #FBBF24;
+  border: 1px solid #F59E0B;
+}
+
+.tick-flat {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* 卡片基礎 */

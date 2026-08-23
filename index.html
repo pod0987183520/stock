@@ -93,7 +93,13 @@
 
       <!-- 1. 股票卡片清單區 (最多 3 檔) -->
       <section class="stocks-section" aria-label="我的自選股票">
-        <h2 class="section-title">📊 我的股票看板</h2>
+        <div class="section-title-row">
+          <h2 class="section-title">📊 我的股票看板</h2>
+          <button id="btn-toggle-tick-voice" class="btn-sound-toggle-active" title="切換動態語音播報">
+            <span id="tick-voice-icon">🔔</span>
+            <span id="tick-voice-text">跳動播報: 開</span>
+          </button>
+        </div>
         <div id="stocks-list" class="stocks-grid">
           <!-- 動態渲染股票卡片 -->
         </div>
