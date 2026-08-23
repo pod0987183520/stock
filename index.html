@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.19">
+  <link rel="stylesheet" href="css/style.css?v=1.20">
 </head>
 <body class="theme-senior">
 
@@ -88,7 +88,7 @@ AI互動陪伴.給予正向情緒價值">
           <!-- 順序 1. 股票名稱 -->
           <div class="stock-view-row stock-view-name-row">
             <span class="row-label">股票名稱</span>
-            <span id="view-stock-name" class="row-val val-stock-name">台積電 (2330)</span>
+            <span id="view-stock-name" class="row-val val-stock-name">台積電</span>
           </div>
 
           <!-- 順序 2. 目前價格 (已取消跳動標籤，不強制換行) -->
@@ -112,38 +112,38 @@ AI互動陪伴.給予正向情緒價值">
           <!-- 順序 5. 目前賺賠 (賺=紅字 / 賠=綠字) -->
           <div class="stock-view-row stock-view-profit-row">
             <span class="row-label">目前賺賠:</span>
-            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 130,000 元</span>
+            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 $139,000 元</span>
           </div>
 
           <!-- 順序 6. 預計賣價 -->
           <div class="stock-view-row">
-            <span class="row-label">預計賣價:</span>
+            <span class="row-label">希望賣價:</span>
             <span id="view-target-price" class="row-val val-bold">1,000 元</span>
           </div>
 
           <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 ▲ 賺 / ▼ 賠) -->
           <div class="stock-view-row stock-view-target-profit-row">
-            <span class="row-label">預計賺賠:</span>
-            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 150,000 元</span>
+            <span class="row-label">希望賺賠:</span>
+            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 $150,000 元</span>
           </div>
 
         </div>
 
         <!-- 底部微型功能列 (聽小股說這檔 / 跳動播報開關) -->
         <div class="stock-view-footer">
-          <button id="btn-speak-current-stock" class="btn-sound-action" title="聽小股說這檔（開啟超白話分析視窗）">
-            <span>💡 聽小股說這檔</span>
+          <button id="btn-speak-current-stock" class="btn-sound-action" title="聽小股分析">
+            <span>💡 聽小股分析</span>
           </button>
-          <button id="btn-toggle-tick-voice" class="btn-sound-toggle-active" title="切換動態跳動語音播報">
+          <button id="btn-toggle-tick-voice" class="btn-sound-toggle-active" title="切換播報提醒">
             <span id="tick-voice-icon">🔔</span>
-            <span id="tick-voice-text">跳動播報: 開</span>
+            <span id="tick-voice-text">播報提醒: 開</span>
           </button>
         </div>
       </section>
 
       <!-- 底部版權與延緩失智陪伴聲明 -->
       <footer class="app-footer">
-        <p class="footer-design">系統設計與開發：陳新昱</p>
+        <p class="footer-design">💡 系統設計與開發：陳新昱</p>
         <p class="footer-notice">此為延緩失智陪伴工具，實際交易需晚輩代勞</p>
       </footer>
 
@@ -330,11 +330,7 @@ AI互動陪伴.給予正向情緒價值">
 
     </div>
 
-    <!-- 頁尾設計師具名 -->
-    <footer class="app-footer" style="text-align: center; margin-top: 20px; color: #64748B; font-size: 20px;">
-      <p>💡 系統設計與開發：<strong>陳新昱</strong></p>
-      <p style="font-size: 16px; margin-top: 4px;">本 App 為認知訓練與長者陪伴工具，無真實金錢劃撥風險</p>
-    </footer>
+    
 
   </main>
 
@@ -458,6 +454,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.19"></script>
+  <script src="js/app.js?v=1.20"></script>
 </body>
 </html>

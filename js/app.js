@@ -9,7 +9,7 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data_v4';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v5';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
@@ -928,11 +928,11 @@
     if (AppState.tickVoiceEnabled) {
       btn.className = 'btn-sound-toggle-active';
       icon.textContent = '🔔';
-      text.textContent = '跳動播報: 開';
+      text.textContent = '播報提醒: 開';
     } else {
       btn.className = 'btn-sound-toggle-active muted';
       icon.textContent = '🔕';
-      text.textContent = '跳動播報: 關';
+      text.textContent = '播報提醒: 關';
     }
   }
 
@@ -956,7 +956,7 @@
       stocks.forEach((stk, idx) => {
         const tabBtn = document.createElement('button');
         tabBtn.className = `stock-tab-btn ${idx === currentStockIndex ? 'active' : ''}`;
-        tabBtn.innerHTML = `<span>${idx === currentStockIndex ? '🟢' : '⚪'}</span> <span>${stk.name} (${stk.id})</span>`;
+        tabBtn.innerHTML = `<span>${idx === currentStockIndex ? '🟢' : '⚪'}</span> <span>${stk.name}</span>`;
         tabBtn.onclick = () => {
           currentStockIndex = idx;
           renderSingleStockView();
@@ -979,7 +979,7 @@
 
     // 1. 股票名稱
     const nameEl = document.getElementById('view-stock-name');
-    if (nameEl) nameEl.textContent = `${stock.name} (${stock.id})`;
+    if (nameEl) nameEl.textContent = `${stock.name}`;
 
     // 2. 目前價格 + 剛才跳動
     const priceEl = document.getElementById('view-current-price');
@@ -1003,10 +1003,10 @@
     if (currentProfitEl) {
       if (isProfit) {
         currentProfitEl.className = 'row-val val-profit-red';
-        currentProfitEl.textContent = `▲ 賺 $${profitDiff.toLocaleString()} 元 (+${profitPct}%)`;
+        currentProfitEl.textContent = `▲ 賺 $${profitDiff.toLocaleString()} 元`;
       } else {
         currentProfitEl.className = 'row-val val-loss-green';
-        currentProfitEl.textContent = `▼ 賠 $${Math.abs(profitDiff).toLocaleString()} 元 (-${profitPct}%)`;
+        currentProfitEl.textContent = `▼ 賠 $${Math.abs(profitDiff).toLocaleString()} 元`;
       }
     }
 
@@ -1020,10 +1020,10 @@
       const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
       if (isTargetProfit) {
         targetProfitEl.className = 'row-val val-target-red';
-        targetProfitEl.textContent = `▲ 賺 $${targetDiff.toLocaleString()} 元 (+${targetPct}%)`;
+        targetProfitEl.textContent = `▲ 賺 $${targetDiff.toLocaleString()} 元`;
       } else {
         targetProfitEl.className = 'row-val val-target-green';
-        targetProfitEl.textContent = `▼ 賠 $${Math.abs(targetDiff).toLocaleString()} 元 (-${targetPct}%)`;
+        targetProfitEl.textContent = `▼ 賠 $${Math.abs(targetDiff).toLocaleString()} 元`;
       }
     }
   }
@@ -1094,7 +1094,7 @@
 
       // 1. 標題
       const titleEl = document.getElementById('summary-stock-title');
-      if (titleEl) titleEl.textContent = `${stock.name} (${stock.id})`;
+      if (titleEl) titleEl.textContent = `${stock.name}`;
 
       // 2. 狀態膠囊
       const statusPill = document.getElementById('summary-status-pill');
@@ -1601,7 +1601,7 @@
 
     // 註冊 Service Worker 並強制更新快取 (v1.19)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.19').then(reg => {
+      navigator.serviceWorker.register('sw.js?v=1.20').then(reg => {
         reg.update();
       }).catch(err => {
         console.warn('SW 註冊忽略（本地預覽模式）', err);
