@@ -2167,3 +2167,19 @@ body {
   color: #38BDF8;
   font-weight: 700;
 }
+
+
+/* 唯讀唯鎖定輸入框樣式 (灰底白字/灰底黑字，明顯區別) */
+.input-locked {
+  background: #1E293B !important;
+  border: 1px solid #475569 !important;
+  color: #94A3B8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.85;
+  user-select: none;
+}
+
+.input-locked:focus {
+  border-color: #475569 !important;
+  box-shadow: none !important;
+}

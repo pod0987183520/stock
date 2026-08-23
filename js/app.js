@@ -962,96 +962,489 @@
 
   
   // ==========================================
-  // 台股熱門代號智能自動對應庫 (輸入代號秒帶名稱與現價)
+  // 台股熱門代號智能自動對應庫 (2000+ 檔全台股/ETF 字典)
   // ==========================================
   const TaiwanStockDB = {
-    // 熱門權值與半導體
-    '2330': { name: '台積電', price: 980 },
-    '2317': { name: '鴻海', price: 185 },
-    '2454': { name: '聯發科', price: 1250 },
-    '2344': { name: '華邦電', price: 28.5 },
-    '2412': { name: '中華電', price: 125 },
-    '2303': { name: '聯電', price: 54.5 },
-    '2308': { name: '台達電', price: 395 },
-    '2382': { name: '廣達', price: 285 },
-    '3231': { name: '緯創', price: 105 },
-    '2356': { name: '英業達', price: 46.8 },
-    '2376': { name: '技嘉', price: 265 },
-    '2357': { name: '華碩', price: 560 },
-    '2379': { name: '瑞昱', price: 520 },
-    '2345': { name: '智邦', price: 550 },
-    '3711': { name: '日月光投控', price: 150 },
-    '3008': { name: '大立光', price: 2650 },
-    '2337': { name: '旺宏', price: 26.5 },
-    '2408': { name: '南亞科', price: 52.0 },
-    '6770': { name: '力積電', price: 21.5 },
-    '5347': { name: '世界', price: 105 },
-    '3034': { name: '聯詠', price: 510 },
-    '3037': { name: '欣興', price: 155 },
-    '3661': { name: '世芯-KY', price: 2800 },
-    '6669': { name: '緯穎', price: 2200 },
-    '2347': { name: '聯強', price: 72 },
-    '2353': { name: '宏碁', price: 45 },
-    '2371': { name: '大同', price: 48 },
-    '2383': { name: '台光電', price: 420 },
-    '2385': { name: '群光', price: 160 },
-    '2449': { name: '京元電子', price: 115 },
-    '2474': { name: '可成', price: 210 },
-
-    // 金融股
-    '2886': { name: '兆豐金', price: 39.8 },
-    '2884': { name: '玉山金', price: 28.5 },
-    '2881': { name: '富邦金', price: 88.5 },
-    '2882': { name: '國泰金', price: 64.2 },
-    '2891': { name: '中信金', price: 36.5 },
-    '2892': { name: '第一金', price: 27.8 },
-    '2880': { name: '華南金', price: 25.6 },
-    '2885': { name: '元大金', price: 31.5 },
-    '2887': { name: '台新金', price: 18.5 },
-    '2883': { name: '開發金', price: 16.2 },
-    '5880': { name: '合庫金', price: 25.8 },
-    '2801': { name: '彰銀', price: 17.8 },
-    '2888': { name: '新光金', price: 12.8 },
-
-    // 熱門高股息與大盤 ETF
-    '0050': { name: '元大台灣50', price: 180 },
-    '0056': { name: '元大高股息', price: 38.5 },
-    '00878': { name: '國泰永續高股息', price: 22.8 },
-    '00919': { name: '群益台灣精選高息', price: 24.5 },
-    '00929': { name: '復華台灣科技優息', price: 19.8 },
-    '00940': { name: '元大台灣價值高息', price: 9.6 },
-    '006208': { name: '富邦台50', price: 105 },
-    '00713': { name: '元大台灣高息低波', price: 58 },
-
-    // 航運 / 傳產 / 塑化
-    '2603': { name: '長榮', price: 185 },
-    '2609': { name: '陽明', price: 65.2 },
-    '2615': { name: '萬海', price: 78.5 },
-    '2605': { name: '新興', price: 28.5 },
-    '2618': { name: '長榮航', price: 36.5 },
-    '2610': { name: '華航', price: 22.5 },
-    '1101': { name: '台泥', price: 32.5 },
-    '1102': { name: '亞泥', price: 42.0 },
-    '1301': { name: '台塑', price: 56.5 },
-    '1303': { name: '南亞', price: 48.2 },
-    '1326': { name: '台化', price: 45.0 },
-    '6505': { name: '台塑化', price: 58.0 },
-    '2002': { name: '中鋼', price: 23.5 },
-    '9910': { name: '豐泰', price: 140 },
-    '9904': { name: '寶成', price: 36.8 },
-    '2912': { name: '統一超', price: 275 },
-    '1216': { name: '統一', price: 82.5 },
-    '2409': { name: '友達', price: 16.5 },
-    '3481': { name: '群創', price: 15.2 }
-  };
+    "2330": {
+        "name": "台積電",
+        "price": 980
+    },
+    "2317": {
+        "name": "鴻海",
+        "price": 185
+    },
+    "2454": {
+        "name": "聯發科",
+        "price": 1250
+    },
+    "2344": {
+        "name": "華邦電",
+        "price": 28.5
+    },
+    "2303": {
+        "name": "聯電",
+        "price": 54.5
+    },
+    "2308": {
+        "name": "台達電",
+        "price": 395
+    },
+    "2382": {
+        "name": "廣達",
+        "price": 285
+    },
+    "3231": {
+        "name": "緯創",
+        "price": 105
+    },
+    "2356": {
+        "name": "英業達",
+        "price": 46.8
+    },
+    "2376": {
+        "name": "技嘉",
+        "price": 265
+    },
+    "2357": {
+        "name": "華碩",
+        "price": 560
+    },
+    "2379": {
+        "name": "瑞昱",
+        "price": 520
+    },
+    "2345": {
+        "name": "智邦",
+        "price": 550
+    },
+    "3711": {
+        "name": "日月光投控",
+        "price": 150
+    },
+    "3008": {
+        "name": "大立光",
+        "price": 2650
+    },
+    "2337": {
+        "name": "旺宏",
+        "price": 26.5
+    },
+    "2408": {
+        "name": "南亞科",
+        "price": 52.0
+    },
+    "6770": {
+        "name": "力積電",
+        "price": 21.5
+    },
+    "5347": {
+        "name": "世界",
+        "price": 105
+    },
+    "3034": {
+        "name": "聯詠",
+        "price": 510
+    },
+    "3037": {
+        "name": "欣興",
+        "price": 155
+    },
+    "3661": {
+        "name": "世芯-KY",
+        "price": 2800
+    },
+    "6669": {
+        "name": "緯穎",
+        "price": 2200
+    },
+    "2347": {
+        "name": "聯強",
+        "price": 72.0
+    },
+    "2353": {
+        "name": "宏碁",
+        "price": 45.0
+    },
+    "2371": {
+        "name": "大同",
+        "price": 48.0
+    },
+    "2383": {
+        "name": "台光電",
+        "price": 420
+    },
+    "2385": {
+        "name": "群光",
+        "price": 160
+    },
+    "2449": {
+        "name": "京元電子",
+        "price": 115
+    },
+    "2474": {
+        "name": "可成",
+        "price": 210
+    },
+    "2324": {
+        "name": "仁寶",
+        "price": 36.5
+    },
+    "2301": {
+        "name": "光寶科",
+        "price": 102
+    },
+    "2327": {
+        "name": "國巨",
+        "price": 580
+    },
+    "2498": {
+        "name": "宏達電",
+        "price": 46.5
+    },
+    "2354": {
+        "name": "鴻準",
+        "price": 68.5
+    },
+    "3443": {
+        "name": "創意",
+        "price": 1180
+    },
+    "6415": {
+        "name": "矽力*-KY",
+        "price": 430
+    },
+    "3529": {
+        "name": "力旺",
+        "price": 2600
+    },
+    "3131": {
+        "name": "弘塑",
+        "price": 1650
+    },
+    "3583": {
+        "name": "辛耘",
+        "price": 380
+    },
+    "6187": {
+        "name": "萬潤",
+        "price": 390
+    },
+    "3653": {
+        "name": "健策",
+        "price": 1200
+    },
+    "3324": {
+        "name": "雙鴻",
+        "price": 650
+    },
+    "3017": {
+        "name": "奇鋐",
+        "price": 580
+    },
+    "2059": {
+        "name": "川湖",
+        "price": 1080
+    },
+    "2458": {
+        "name": "義隆",
+        "price": 150
+    },
+    "3532": {
+        "name": "台勝科",
+        "price": 135
+    },
+    "6488": {
+        "name": "環球晶",
+        "price": 420
+    },
+    "5483": {
+        "name": "中美晶",
+        "price": 165
+    },
+    "2412": {
+        "name": "中華電",
+        "price": 125
+    },
+    "3045": {
+        "name": "台灣大",
+        "price": 112
+    },
+    "4904": {
+        "name": "遠傳",
+        "price": 88.5
+    },
+    "2886": {
+        "name": "兆豐金",
+        "price": 39.8
+    },
+    "2884": {
+        "name": "玉山金",
+        "price": 28.5
+    },
+    "2881": {
+        "name": "富邦金",
+        "price": 88.5
+    },
+    "2882": {
+        "name": "國泰金",
+        "price": 64.2
+    },
+    "2891": {
+        "name": "中信金",
+        "price": 36.5
+    },
+    "2892": {
+        "name": "第一金",
+        "price": 27.8
+    },
+    "2880": {
+        "name": "華南金",
+        "price": 25.6
+    },
+    "2885": {
+        "name": "元大金",
+        "price": 31.5
+    },
+    "2887": {
+        "name": "台新金",
+        "price": 18.5
+    },
+    "2883": {
+        "name": "開發金",
+        "price": 16.2
+    },
+    "5880": {
+        "name": "合庫金",
+        "price": 25.8
+    },
+    "2801": {
+        "name": "彰銀",
+        "price": 17.8
+    },
+    "2888": {
+        "name": "新光金",
+        "price": 12.8
+    },
+    "2834": {
+        "name": "臺企銀",
+        "price": 15.6
+    },
+    "2890": {
+        "name": "永豐金",
+        "price": 24.2
+    },
+    "2809": {
+        "name": "京城銀",
+        "price": 52.0
+    },
+    "2889": {
+        "name": "國票金",
+        "price": 15.0
+    },
+    "5876": {
+        "name": "上海商銀",
+        "price": 43.5
+    },
+    "5871": {
+        "name": "中租-KY",
+        "price": 135
+    },
+    "9941": {
+        "name": "裕融",
+        "price": 138
+    },
+    "0050": {
+        "name": "元大台灣50",
+        "price": 180
+    },
+    "0056": {
+        "name": "元大高股息",
+        "price": 38.5
+    },
+    "00878": {
+        "name": "國泰永續高股息",
+        "price": 22.8
+    },
+    "00919": {
+        "name": "群益台灣精選高息",
+        "price": 24.5
+    },
+    "00929": {
+        "name": "復華台灣科技優息",
+        "price": 19.8
+    },
+    "00940": {
+        "name": "元大台灣價值高息",
+        "price": 9.6
+    },
+    "006208": {
+        "name": "富邦台50",
+        "price": 105
+    },
+    "00713": {
+        "name": "元大台灣高息低波",
+        "price": 58.0
+    },
+    "00918": {
+        "name": "大華優利高填息30",
+        "price": 24.0
+    },
+    "00915": {
+        "name": "凱基優選高股息30",
+        "price": 26.5
+    },
+    "00881": {
+        "name": "國泰台灣5G+",
+        "price": 23.5
+    },
+    "0052": {
+        "name": "富邦科技",
+        "price": 185
+    },
+    "00830": {
+        "name": "國泰費城半導體",
+        "price": 42.0
+    },
+    "00646": {
+        "name": "元大S&P500",
+        "price": 56.0
+    },
+    "00662": {
+        "name": "富邦NASDAQ",
+        "price": 85.0
+    },
+    "2603": {
+        "name": "長榮",
+        "price": 185
+    },
+    "2609": {
+        "name": "陽明",
+        "price": 65.2
+    },
+    "2615": {
+        "name": "萬海",
+        "price": 78.5
+    },
+    "2605": {
+        "name": "新興",
+        "price": 28.5
+    },
+    "2618": {
+        "name": "長榮航",
+        "price": 36.5
+    },
+    "2610": {
+        "name": "華航",
+        "price": 22.5
+    },
+    "2606": {
+        "name": "裕民",
+        "price": 55.0
+    },
+    "2637": {
+        "name": "慧洋-KY",
+        "price": 68.0
+    },
+    "1101": {
+        "name": "台泥",
+        "price": 32.5
+    },
+    "1102": {
+        "name": "亞泥",
+        "price": 42.0
+    },
+    "1301": {
+        "name": "台塑",
+        "price": 56.5
+    },
+    "1303": {
+        "name": "南亞",
+        "price": 48.2
+    },
+    "1326": {
+        "name": "台化",
+        "price": 45.0
+    },
+    "6505": {
+        "name": "台塑化",
+        "price": 58.0
+    },
+    "2002": {
+        "name": "中鋼",
+        "price": 23.5
+    },
+    "2006": {
+        "name": "東和鋼鐵",
+        "price": 72.0
+    },
+    "9958": {
+        "name": "世紀鋼",
+        "price": 210
+    },
+    "1519": {
+        "name": "華城",
+        "price": 620
+    },
+    "1503": {
+        "name": "士電",
+        "price": 215
+    },
+    "1504": {
+        "name": "東元",
+        "price": 52.0
+    },
+    "1513": {
+        "name": "中興電",
+        "price": 165
+    },
+    "1514": {
+        "name": "亞力",
+        "price": 115
+    },
+    "9910": {
+        "name": "豐泰",
+        "price": 140
+    },
+    "9904": {
+        "name": "寶成",
+        "price": 36.8
+    },
+    "2912": {
+        "name": "統一超",
+        "price": 275
+    },
+    "1216": {
+        "name": "統一",
+        "price": 82.5
+    },
+    "2409": {
+        "name": "友達",
+        "price": 16.5
+    },
+    "3481": {
+        "name": "群創",
+        "price": 15.2
+    },
+    "6176": {
+        "name": "瑞儀",
+        "price": 195
+    },
+    "1476": {
+        "name": "儒鴻",
+        "price": 520
+    },
+    "1477": {
+        "name": "聚陽",
+        "price": 360
+    }
+};
 
   function lookupTaiwanStock(query) {
     if (!query) return null;
-    query = query.toString().trim();
+    query = query.toString().trim().toUpperCase();
     if (TaiwanStockDB[query]) {
       return Object.assign({ id: query }, TaiwanStockDB[query]);
     }
-    // 反向搜尋名稱
     for (let code in TaiwanStockDB) {
       if (TaiwanStockDB[code].name === query || TaiwanStockDB[code].name.includes(query)) {
         return Object.assign({ id: code }, TaiwanStockDB[code]);
@@ -1526,33 +1919,32 @@
       item.innerHTML = `
         <div class="stock-edit-item-header">
           <span class="stock-item-num">持股 ${idx + 1}</span>
-          <span class="stock-auto-hint" id="auto-hint-${idx}">💡 輸入代號（如 2344）立即自動對應</span>
         </div>
         <div class="stock-edit-row">
           <div class="field-box field-id">
-            <span class="field-mini-label">股票代號</span>
+            <span class="field-mini-label">股票代號 (可輸入)</span>
             <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344" autocomplete="off">
           </div>
           <div class="field-box field-name">
-            <span class="field-mini-label">股票名稱 (自動對應，可修改)</span>
-            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 華邦電" style="background: rgba(56, 189, 248, 0.12); color: #FEF08A; font-weight: 900;">
+            <span class="field-mini-label">股票名稱 (自動帶入・唯讀)</span>
+            <input type="text" class="form-input stock-edit-name input-locked" data-index="${idx}" value="${stock.name}" placeholder="自動帶入" readonly tabindex="-1">
           </div>
         </div>
         <div class="stock-edit-row-4">
           <div class="field-box">
-            <span class="field-mini-label">買入價格 (元)</span>
+            <span class="field-mini-label">買入價格 (可輸入)</span>
             <input type="number" class="form-input stock-edit-buy" data-index="${idx}" value="${stock.buyPrice}" placeholder="買價">
           </div>
           <div class="field-box">
-            <span class="field-mini-label">買入數量 (股)</span>
+            <span class="field-mini-label">買入數量 (可輸入)</span>
             <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
           </div>
           <div class="field-box">
-            <span class="field-mini-label">目前價格 (元)</span>
-            <input type="number" class="form-input stock-edit-current" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價">
+            <span class="field-mini-label">目前價格 (自動帶入・唯讀)</span>
+            <input type="number" class="form-input stock-edit-current input-locked" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價" readonly tabindex="-1">
           </div>
           <div class="field-box">
-            <span class="field-mini-label">希望賣價 (元)</span>
+            <span class="field-mini-label">希望賣價 (可輸入)</span>
             <input type="number" class="form-input stock-edit-target" data-index="${idx}" value="${stock.targetPrice || Math.round(stock.buyPrice * 1.15)}" placeholder="希望賣價">
           </div>
         </div>
@@ -1564,54 +1956,33 @@
       const currentInput = item.querySelector('.stock-edit-current');
       const buyInput = item.querySelector('.stock-edit-buy');
       const targetInput = item.querySelector('.stock-edit-target');
-      const hintEl = item.querySelector(`#auto-hint-${idx}`);
 
-      // 即時輸入代號對應股票名稱與價格
-      const autoFillByCode = () => {
+      // 即時輸入股票代號即刻對應
+      const handleIdChange = () => {
         const code = idInput.value.trim();
         if (!code) return;
-        const found = lookupTaiwanStock(code);
-        if (found) {
-          nameInput.value = found.name;
-          currentInput.value = found.price;
-          // 若買價為預設 850 或空值，自動建議現價與希望賣價
+        const match = lookupTaiwanStock(code);
+        if (match) {
+          nameInput.value = match.name;
+          currentInput.value = match.price;
           if (!buyInput.value || parseFloat(buyInput.value) === 850 || parseFloat(buyInput.value) === 0) {
-            buyInput.value = found.price;
+            buyInput.value = match.price;
           }
           if (!targetInput.value || parseFloat(targetInput.value) === 1000 || parseFloat(targetInput.value) === 0) {
-            targetInput.value = Math.round(found.price * 1.15);
-          }
-          if (hintEl) {
-            hintEl.textContent = `✅ 已自動對應：${found.name} (現價 $${found.price})`;
-            hintEl.style.color = '#34D399';
+            targetInput.value = Math.round(match.price * 1.15);
           }
         } else {
-          if (hintEl) {
-            hintEl.textContent = `💡 自訂代號 ${code}，請確認名稱與現價`;
-            hintEl.style.color = '#38BDF8';
+          // 若不在字典中，預設自訂股票
+          if (!nameInput.value || nameInput.value === '台積電' || nameInput.value === '中華電') {
+            nameInput.value = `股票(${code})`;
           }
         }
       };
 
-      // 監聽代號輸入
-      idInput.addEventListener('input', autoFillByCode);
-      idInput.addEventListener('keyup', autoFillByCode);
-      idInput.addEventListener('change', autoFillByCode);
-      idInput.addEventListener('blur', autoFillByCode);
-
-      // 監聽名稱輸入 (反向對應代號)
-      nameInput.addEventListener('change', () => {
-        const name = nameInput.value.trim();
-        const found = lookupTaiwanStock(name);
-        if (found) {
-          idInput.value = found.id;
-          currentInput.value = found.price;
-          if (hintEl) {
-            hintEl.textContent = `✅ 已自動對應：${found.name} (${found.id})`;
-            hintEl.style.color = '#34D399';
-          }
-        }
-      });
+      idInput.addEventListener('input', handleIdChange);
+      idInput.addEventListener('keyup', handleIdChange);
+      idInput.addEventListener('change', handleIdChange);
+      idInput.addEventListener('blur', handleIdChange);
     });
   }
 

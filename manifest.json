@@ -1,18 +1,17 @@
 {
-  "name": "小股同學 - 我的股票",
+  "name": "小股同學 - 防失智炒股陪伴",
   "short_name": "小股同學",
-  "description": "專為長者設計的極簡股票認知訓練與家庭資產關懷 App",
-  "start_url": "./index.html",
+  "description": "預防長輩失智的安全炒股神器，AI互動陪伴與正向情緒價值",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0B1329",
-  "theme_color": "#0B1329",
-  "orientation": "portrait-primary",
+  "theme_color": "#152243",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "z_img_app_192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "z_img_app_512.png",
