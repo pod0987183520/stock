@@ -829,6 +829,7 @@
   const Speech = {
     synthesizer: window.speechSynthesis || null,
     currentVoice: null,
+    taiwaneseVoice: null,
 
     init() {
       if (!this.synthesizer) return;
@@ -841,6 +842,9 @@
     loadVoices() {
       if (!this.synthesizer) return;
       const voices = this.synthesizer.getVoices();
+      // 搜尋台語/閩南語 voice package (如 nan-TW, zh-min-nan, Taiwanese)
+      this.taiwaneseVoice = voices.find(v => v.lang.includes('nan') || v.lang.includes('min') || v.name.includes('Taiwanese') || v.name.includes('閩')) || null;
+      // 繁體中文台灣語音 (zh-TW)
       this.currentVoice = voices.find(v => v.lang === 'zh-TW') ||
                           voices.find(v => v.lang.includes('zh') && v.name.includes('Taiwan')) ||
                           voices.find(v => v.lang.includes('zh')) || null;
@@ -851,13 +855,23 @@
       this.synthesizer.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      if (this.currentVoice) utterance.voice = this.currentVoice;
       const elder = getActiveElder();
+      const isTw = (elder && elder.language === 'taiwanese');
+
+      if (isTw && this.taiwaneseVoice) {
+        utterance.voice = this.taiwaneseVoice;
+      } else if (this.currentVoice) {
+        utterance.voice = this.currentVoice;
+      }
       utterance.rate = elder.voiceRate || 0.85;
       utterance.pitch = 1.05;
 
       if (onEnd) utterance.onend = onEnd;
       this.synthesizer.speak(utterance);
+    },
+
+    cancel() {
+      if (this.synthesizer) this.synthesizer.cancel();
     },
 
     stop() {
@@ -1336,6 +1350,18 @@
     }
   }
 
+  window.toggleTickVoice = function toggleTickVoice() {
+    AppState.tickVoiceEnabled = !AppState.tickVoiceEnabled;
+    saveAppState();
+    updateTickVoiceButtonUI();
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
+    const statusPrompt = AppState.tickVoiceEnabled
+      ? (isTw ? '動態跳動語音播報開起囉！' : '動態跳動語音播報已開啟囉！')
+      : (isTw ? '動態語音播報已經關閉靜音囉。' : '動態語音播報已經關閉靜音囉。');
+    Speech.speak(statusPrompt);
+  };
+
   function updateTickVoiceButtonUI() {
     const btn = document.getElementById('btn-toggle-tick-voice');
     const icon = document.getElementById('tick-voice-icon');
@@ -1347,7 +1373,7 @@
       icon.textContent = '🔔';
       text.textContent = '播報提醒: 開';
     } else {
-      btn.className = 'btn-sound-toggle-active muted';
+      btn.className = 'btn-sound-toggle-muted';
       icon.textContent = '🔕';
       text.textContent = '播報提醒: 關';
     }
@@ -1511,6 +1537,18 @@
   // ==========================================
   // 10.4 小股超白話分析視窗管理器 (Stock Summary Modal Manager)
   // ==========================================
+  window.openStockSummary = function() {
+    StockSummaryModalManager.open();
+  };
+
+  window.closeStockSummary = function() {
+    StockSummaryModalManager.close();
+  };
+
+  window.replayStockSummaryVoice = function() {
+    StockSummaryModalManager.replay();
+  };
+
   const StockSummaryModalManager = {
     currentSpeechText: '',
 
@@ -1527,11 +1565,13 @@
 
       const btnReplay = document.getElementById('btn-replay-summary-voice');
       if (btnReplay) {
-        btnReplay.onclick = () => {
-          if (this.currentSpeechText) {
-            Speech.speak(this.currentSpeechText);
-          }
-        };
+        btnReplay.onclick = () => this.replay();
+      }
+    },
+
+    replay() {
+      if (this.currentSpeechText) {
+        Speech.speak(this.currentSpeechText);
       }
     },
 
