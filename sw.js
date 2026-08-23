@@ -1,5 +1,5 @@
 // Service Worker for 小股同學 (Network-First with Auto-Cache-Purge)
-const CACHE_NAME = 'xiaogu-stocks-v1.20';
+const CACHE_NAME = 'xiaogu-stocks-v1.21';
 const ASSETS = [
   './',
   './index.html',

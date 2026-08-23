@@ -17,7 +17,22 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.20">
+  <link rel="stylesheet" href="css/style.css?v=1.21">
+  <script>
+    // 自動防污染：強制清理舊版本快取與舊 LocalStorage
+    try {
+      if ('caches' in window) {
+        caches.keys().then(keys => {
+          keys.forEach(k => {
+            if (!k.includes('v1.21')) caches.delete(k);
+          });
+        });
+      }
+      ['xiaogu_stocks_app_data', 'xiaogu_stocks_app_data_v2', 'xiaogu_stocks_app_data_v3', 'xiaogu_stocks_app_data_v4'].forEach(k => {
+        localStorage.removeItem(k);
+      });
+    } catch(e) {}
+  </script>
 </head>
 <body class="theme-senior">
 
@@ -454,6 +469,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.20"></script>
+  <script src="js/app.js?v=1.21"></script>
 </body>
 </html>

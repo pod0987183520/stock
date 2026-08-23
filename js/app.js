@@ -1601,7 +1601,7 @@
 
     // 註冊 Service Worker 並強制更新快取 (v1.19)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.20').then(reg => {
+      navigator.serviceWorker.register('sw.js?v=1.21').then(reg => {
         reg.update();
       }).catch(err => {
         console.warn('SW 註冊忽略（本地預覽模式）', err);
