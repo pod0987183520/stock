@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.27">
+  <link rel="stylesheet" href="css/style.css?v=1.28">
   
 </head>
 <body class="theme-senior">
@@ -451,19 +451,11 @@ AI互動陪伴.給予正向情緒價值">
           </div>
         </div>
 
-        <!-- 雲端同步中樞設定 (選填/進階) -->
-        <div class="form-group">
-          <label class="form-label">☁️ 雲端同步伺服器：</label>
-          <select id="setting-cloud-provider" class="form-input">
-            <option value="public_kv">🟢 免註冊開箱即用公共雲端 (預設推薦)</option>
-            <option value="custom_rest">⚙️ 自訂 Supabase / Firebase / Cloudflare 網址</option>
-          </select>
-          <input type="text" id="setting-custom-cloud-url" class="form-input hidden" placeholder="請貼上您的自訂 REST API 網址" style="margin-top: 8px;">
-        </div>
+        
 
-        <!-- 股票清單編輯區 -->
+                <!-- 股票清單編輯區 (最多2檔) -->
         <div class="form-group">
-          <label class="form-label">📈 目前選取長輩之自選股票設定 (最多3檔)：</label>
+          <label class="form-label">📈 目前選取長輩之自選股票設定 (最多2檔)：</label>
           <div id="caregiver-stocks-editor" class="stocks-editor-list">
             <!-- 動態渲染股票編輯欄位 -->
           </div>
@@ -475,6 +467,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.27"></script>
+  <script src="js/app.js?v=1.28"></script>
 </body>
 </html>

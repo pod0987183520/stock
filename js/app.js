@@ -1913,7 +1913,21 @@
     editorList.innerHTML = '';
     const elder = getActiveElder();
 
-    elder.stocks.forEach((stock, idx) => {
+    // 嚴格限制最多 2 檔股票
+    const stocksToRender = (elder.stocks || []).slice(0, 2);
+    while (stocksToRender.length < 2) {
+      stocksToRender.push({
+        id: stocksToRender.length === 0 ? '2330' : '2412',
+        name: stocksToRender.length === 0 ? '台積電' : '中華電',
+        buyPrice: stocksToRender.length === 0 ? 980 : 125,
+        shares: 1000,
+        currentPrice: stocksToRender.length === 0 ? 980 : 125,
+        targetPrice: stocksToRender.length === 0 ? 1100 : 135
+      });
+    }
+    elder.stocks = stocksToRender;
+
+    stocksToRender.forEach((stock, idx) => {
       const item = document.createElement('div');
       item.className = 'stock-edit-item';
       item.innerHTML = `
@@ -1922,7 +1936,7 @@
         </div>
         <div class="stock-edit-row">
           <div class="field-box field-id">
-            <span class="field-mini-label">股票代號 (可輸入)</span>
+            <span class="field-mini-label">股票代號 (輸入即自動對應)</span>
             <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344" autocomplete="off">
           </div>
           <div class="field-box field-name">
@@ -1957,7 +1971,6 @@
       const buyInput = item.querySelector('.stock-edit-buy');
       const targetInput = item.querySelector('.stock-edit-target');
 
-      // 即時輸入股票代號即刻對應
       const handleIdChange = () => {
         const code = idInput.value.trim();
         if (!code) return;
@@ -1965,17 +1978,10 @@
         if (match) {
           nameInput.value = match.name;
           currentInput.value = match.price;
-          if (!buyInput.value || parseFloat(buyInput.value) === 850 || parseFloat(buyInput.value) === 0) {
-            buyInput.value = match.price;
-          }
-          if (!targetInput.value || parseFloat(targetInput.value) === 1000 || parseFloat(targetInput.value) === 0) {
-            targetInput.value = Math.round(match.price * 1.15);
-          }
+          buyInput.value = match.price;
+          targetInput.value = Math.round(match.price * 1.15);
         } else {
-          // 若不在字典中，預設自訂股票
-          if (!nameInput.value || nameInput.value === '台積電' || nameInput.value === '中華電') {
-            nameInput.value = `股票(${code})`;
-          }
+          nameInput.value = `股票(${code})`;
         }
       };
 
@@ -2005,20 +2011,23 @@
     const buys = document.querySelectorAll('.stock-edit-buy');
     const shares = document.querySelectorAll('.stock-edit-shares');
     const currents = document.querySelectorAll('.stock-edit-current');
+    const targets = document.querySelectorAll('.stock-edit-target');
 
-    names.forEach((el, i) => {
-      if (currentElder.stocks[i]) {
-        currentElder.stocks[i].name = el.value || currentElder.stocks[i].name;
-        currentElder.stocks[i].id = ids[i].value || currentElder.stocks[i].id;
-        currentElder.stocks[i].buyPrice = parseFloat(buys[i].value) || currentElder.stocks[i].buyPrice;
-        currentElder.stocks[i].shares = parseInt(shares[i].value) || currentElder.stocks[i].shares;
-        currentElder.stocks[i].currentPrice = parseFloat(currents[i].value) || currentElder.stocks[i].currentPrice;
-        const targets = document.querySelectorAll('.stock-edit-target');
-        if (targets[i]) {
-          currentElder.stocks[i].targetPrice = parseFloat(targets[i].value) || currentElder.stocks[i].targetPrice;
-        }
+    const newStocks = [];
+    ids.forEach((el, i) => {
+      if (i < 2) { // 限制最多2檔
+        newStocks.push({
+          id: el.value.trim() || (i === 0 ? '2330' : '2412'),
+          name: (names[i] && names[i].value) ? names[i].value : (i === 0 ? '台積電' : '中華電'),
+          buyPrice: (buys[i] && parseFloat(buys[i].value)) || 100,
+          shares: (shares[i] && parseInt(shares[i].value)) || 1000,
+          currentPrice: (currents[i] && parseFloat(currents[i].value)) || 100,
+          targetPrice: (targets[i] && parseFloat(targets[i].value)) || 120
+        });
       }
     });
+
+    currentElder.stocks = newStocks;
 
     saveAppState();
     CloudSync.pushElder('dad');
@@ -2207,11 +2216,73 @@
       renderPocketMoney();
     };
 
-    // 徹底註銷 Service Worker，保證每次都加載最新版本
+    // ==========================================
+    // PWA 一鍵安裝核心機制 (比照 1~50 遊戲設計)
+    // ==========================================
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      window.deferredPrompt = e;
+      console.log('PWA beforeinstallprompt captured!');
+    });
+
+    const triggerPWAInstall = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (isIOS) {
+        const iosModal = document.getElementById('iosInstallModal');
+        if (iosModal) iosModal.classList.remove('hidden');
+      } else if (deferredPrompt || window.deferredPrompt) {
+        const promptEvent = deferredPrompt || window.deferredPrompt;
+        promptEvent.prompt();
+        promptEvent.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            const btnHeader = document.getElementById('btn-header-install');
+            if (btnHeader) btnHeader.style.display = 'none';
+          }
+          deferredPrompt = null;
+          window.deferredPrompt = null;
+        });
+      } else {
+        const androidModal = document.getElementById('androidInstallGuideModal');
+        if (androidModal) {
+          androidModal.classList.remove('hidden');
+        } else {
+          alert('📲 請點擊瀏覽器右上角選單 ➜ 選擇「安裝應用程式」或「加到主畫面」！');
+        }
+      }
+    };
+
+    const btnHeaderInstall = document.getElementById('btn-header-install');
+    if (btnHeaderInstall) {
+      btnHeaderInstall.onclick = triggerPWAInstall;
+    }
+
+    const btnBannerInstall = document.getElementById('btn-banner-install');
+    if (btnBannerInstall) {
+      btnBannerInstall.onclick = triggerPWAInstall;
+    }
+
+    const btnBannerDismiss = document.getElementById('btn-banner-dismiss');
+    if (btnBannerDismiss) {
+      btnBannerDismiss.onclick = () => {
+        const androidBanner = document.getElementById('androidInstallBanner');
+        if (androidBanner) androidBanner.classList.add('hidden');
+      };
+    }
+
+    window.addEventListener('appinstalled', () => {
+      const btnHeader = document.getElementById('btn-header-install');
+      if (btnHeader) btnHeader.style.display = 'none';
+      deferredPrompt = null;
+      window.deferredPrompt = null;
+    });
+
+    // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (let r of regs) r.unregister();
-      });
+      navigator.serviceWorker.register('sw.js?v=1.28')
+        .then((reg) => console.log('Service Worker 註冊成功:', reg.scope))
+        .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }
   });
 
