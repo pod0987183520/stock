@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.30">
+  <link rel="stylesheet" href="css/style.css?v=1.31">
 </head>
 <body class="theme-senior">
 
@@ -74,7 +74,7 @@ AI互動陪伴.給予正向情緒價值">
 
       <!-- 頂端列右側按鈕群：僅保留 安裝App 按鈕與齒輪設定 -->
       <div class="header-actions">
-        <button id="btn-header-install" class="btn-header-install hidden" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝App</button>
+        <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝App</button>
         <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定" onclick="openCaregiverModal()">⚙️</button>
       </div>
     </div>
@@ -460,11 +460,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.30"></script>
+  <script src="js/app.js?v=1.31"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=1.30')
+        navigator.serviceWorker.register('sw.js?v=1.31')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

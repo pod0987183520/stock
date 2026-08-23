@@ -27,6 +27,21 @@
     });
   }
 
+  // 提前捕捉 beforeinstallprompt 與 appinstalled 事件（在最頂層立即執行，絕不漏接）
+  window.deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    const btn = document.getElementById('btn-header-install');
+    if (btn && !isStandalone) btn.classList.remove('hidden');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    const btn = document.getElementById('btn-header-install');
+    if (btn) btn.classList.add('hidden');
+    window.deferredPrompt = null;
+  });
+
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
@@ -2176,34 +2191,21 @@
     }
 
     // ==========================================
-    // PWA 事件監聽與按鈕顯示邏輯
+    // PWA 按鈕狀態與生命週期管理
     // ==========================================
     const btnHeader = document.getElementById('btn-header-install');
 
-    // 只要不是已經安裝的獨立 App 模式 (Standalone)，且處於 iOS，就直接顯示頂端列安裝按鈕
-    if (!isStandalone && isIOS) {
+    // 若已經是從手機桌面圖示以獨立 App 開啟 (Standalone)，隱藏按鈕避免干擾
+    if (isStandalone) {
+      if (btnHeader) btnHeader.classList.add('hidden');
+    } else {
+      // 若在普通瀏覽器中開啟（Chrome/Safari/Edge等），預設常駐顯示供長輩一鍵點選
       if (btnHeader) btnHeader.classList.remove('hidden');
     }
 
-    // 捕捉 Android / Chrome / Edge 的 beforeinstallprompt 事件
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      window.deferredPrompt = e;
-      if (btnHeader && !isStandalone) {
-        btnHeader.classList.remove('hidden');
-      }
-    });
-
-    // 監聽安裝完成廣播
-    window.addEventListener('appinstalled', () => {
-      if (btnHeader) btnHeader.classList.add('hidden');
-      window.deferredPrompt = null;
-      console.log('小股同學 PWA 安裝成功！');
-    });
-
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.30')
+      navigator.serviceWorker.register('sw.js?v=1.31')
         .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }
