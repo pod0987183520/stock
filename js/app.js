@@ -9,7 +9,7 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data_v3';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v4';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
@@ -137,13 +137,27 @@
 
   let AppState = loadAppState();
 
+  function ensureDualStocks(data) {
+    if (!data.elders) data.elders = JSON.parse(JSON.stringify(defaultData.elders));
+    ['dad', 'mom'].forEach(k => {
+      if (!data.elders[k]) {
+        data.elders[k] = JSON.parse(JSON.stringify(defaultData.elders[k]));
+      }
+      if (!Array.isArray(data.elders[k].stocks) || data.elders[k].stocks.length < 2) {
+        data.elders[k].stocks = JSON.parse(JSON.stringify(defaultData.elders[k].stocks));
+      }
+    });
+    return data;
+  }
+
   function loadAppState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return Object.assign({}, defaultData, JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        return ensureDualStocks(Object.assign({}, defaultData, parsed));
       }
-      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data_v2') || localStorage.getItem('xiaogu_stocks_app_data');
+      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data_v3') || localStorage.getItem('xiaogu_stocks_app_data_v2') || localStorage.getItem('xiaogu_stocks_app_data');
       if (oldSaved) {
         const old = JSON.parse(oldSaved);
         const data = JSON.parse(JSON.stringify(defaultData));
@@ -153,12 +167,12 @@
           if (old.elders.dad) data.elders.dad = Object.assign({}, data.elders.dad, old.elders.dad);
           if (old.elders.mom) data.elders.mom = Object.assign({}, data.elders.mom, old.elders.mom);
         }
-        return data;
+        return ensureDualStocks(data);
       }
     } catch (e) {
       console.warn('讀取 LocalStorage 失敗，使用預設值', e);
     }
-    return JSON.parse(JSON.stringify(defaultData));
+    return ensureDualStocks(JSON.parse(JSON.stringify(defaultData)));
   }
 
   function saveAppState() {
@@ -933,25 +947,23 @@
     }
 
     // 1. 渲染頂部股票大頁籤
+    const tabsWrapperEl = document.getElementById('stock-tabs-wrapper');
     const tabsListEl = document.getElementById('stock-tabs-list');
     if (tabsListEl) {
       tabsListEl.innerHTML = '';
-      if (stocks.length > 1) {
-        tabsListEl.parentElement.style.display = 'block';
-        stocks.forEach((stk, idx) => {
-          const tabBtn = document.createElement('button');
-          tabBtn.className = `stock-tab-btn ${idx === currentStockIndex ? 'active' : ''}`;
-          tabBtn.innerHTML = `<span>${idx === currentStockIndex ? '🟢' : '⚪'}</span> <span>${stk.name} (${stk.id})</span>`;
-          tabBtn.onclick = () => {
-            currentStockIndex = idx;
-            renderSingleStockView();
-            speakCurrentStockBrief();
-          };
-          tabsListEl.appendChild(tabBtn);
-        });
-      } else {
-        tabsListEl.parentElement.style.display = 'none';
-      }
+      if (tabsWrapperEl) tabsWrapperEl.style.display = 'block';
+
+      stocks.forEach((stk, idx) => {
+        const tabBtn = document.createElement('button');
+        tabBtn.className = `stock-tab-btn ${idx === currentStockIndex ? 'active' : ''}`;
+        tabBtn.innerHTML = `<span>${idx === currentStockIndex ? '🟢' : '⚪'}</span> <span>${stk.name} (${stk.id})</span>`;
+        tabBtn.onclick = () => {
+          currentStockIndex = idx;
+          renderSingleStockView();
+          speakCurrentStockBrief();
+        };
+        tabsListEl.appendChild(tabBtn);
+      });
     }
 
     // 2. 渲染當前股票 7 大標準欄位
@@ -973,19 +985,7 @@
     const priceEl = document.getElementById('view-current-price');
     if (priceEl) priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
 
-    const tickBadgeEl = document.getElementById('view-tick-badge');
-    if (tickBadgeEl) {
-      if (stock.lastDiff > 0) {
-        tickBadgeEl.className = 'tick-diff-badge tick-up';
-        tickBadgeEl.textContent = `⚡ 剛才跳動：▲ 比剛剛漲 $${stock.lastDiff} 元`;
-      } else if (stock.lastDiff < 0) {
-        tickBadgeEl.className = 'tick-diff-badge tick-down';
-        tickBadgeEl.textContent = `⚡ 剛才跳動：▼ 比剛剛下滑 $${Math.abs(stock.lastDiff)} 元`;
-      } else {
-        tickBadgeEl.className = 'tick-diff-badge tick-flat';
-        tickBadgeEl.textContent = `⚡ 剛才跳動：盤中平盤`;
-      }
-    }
+    
 
     // 3. 買入價格
     const buyPriceEl = document.getElementById('view-buy-price');
@@ -998,16 +998,15 @@
       sharesEl.textContent = `${sheets}(${stock.shares.toLocaleString()} 股)`;
     }
 
-    // 5. 目前賺賠
+    // 5. 目前賺賠 (台灣股市規範：賺=紅字 / 賠=綠字)
     const currentProfitEl = document.getElementById('view-current-profit');
     if (currentProfitEl) {
       if (isProfit) {
-        currentProfitEl.className = 'row-val val-profit-hero';
+        currentProfitEl.className = 'row-val val-profit-red';
         currentProfitEl.textContent = `▲ 賺 $${profitDiff.toLocaleString()} 元 (+${profitPct}%)`;
       } else {
-        currentProfitEl.className = 'row-val val-profit-hero';
-        currentProfitEl.style.color = '#F59E0B';
-        currentProfitEl.textContent = `▼ 待漲 $${Math.abs(profitDiff).toLocaleString()} 元 (${profitPct}%)`;
+        currentProfitEl.className = 'row-val val-loss-green';
+        currentProfitEl.textContent = `▼ 賠 $${Math.abs(profitDiff).toLocaleString()} 元 (-${profitPct}%)`;
       }
     }
 
@@ -1015,14 +1014,21 @@
     const targetPriceEl = document.getElementById('view-target-price');
     if (targetPriceEl) targetPriceEl.textContent = `$${stock.targetPrice.toLocaleString()} 元`;
 
-    // 7. 預計賺賠
+    // 7. 預計賺賠 (刪除預計二字，直接顯示 ▲ 賺 / ▼ 賠，台灣股市規範：賺=紅字 / 賠=綠字)
     const targetProfitEl = document.getElementById('view-target-profit');
     if (targetProfitEl) {
-      targetProfitEl.textContent = `▲ 預計賺 $${targetDiff.toLocaleString()} 元 (+${targetPct}%)`;
+      const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
+      if (isTargetProfit) {
+        targetProfitEl.className = 'row-val val-target-red';
+        targetProfitEl.textContent = `▲ 賺 $${targetDiff.toLocaleString()} 元 (+${targetPct}%)`;
+      } else {
+        targetProfitEl.className = 'row-val val-target-green';
+        targetProfitEl.textContent = `▼ 賠 $${Math.abs(targetDiff).toLocaleString()} 元 (-${targetPct}%)`;
+      }
     }
   }
 
-  // 語音播報當前股票摘要
+  // 切換股票時之簡短語音播報
   function speakCurrentStockBrief() {
     const elder = getActiveElder();
     const isTw = (elder.language === 'taiwanese');
@@ -1031,19 +1037,130 @@
 
     const isProfit = (stock.currentPrice >= stock.buyPrice);
     const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
+    const formattedDiff = (Math.abs(diff) >= 10000) ? (Math.abs(diff) / 10000).toFixed(1) + ' 萬' : Math.abs(diff).toLocaleString();
 
     let text = '';
     if (isTw) {
-      text = `${elder.title}，這馬是${stock.name}，目前現價是 ${stock.currentPrice} 圓。` +
-             (isProfit ? `目前趁 ${diff.toLocaleString()} 圓！` : `目前稍微休息等起飛！`) +
-             `目標價是 ${stock.targetPrice} 圓喔！`;
+      text = `切換到${stock.name}，目前現價是 ${stock.currentPrice} 圓。` +
+             (isProfit ? `目前趁 ${formattedDiff} 圓！` : `目前稍微休息待漲！`);
     } else {
-      text = `${elder.title}，現在為您顯示${stock.name}，目前現價是 ${stock.currentPrice} 元。` +
-             (isProfit ? `目前賺 ${diff.toLocaleString()} 元！` : `目前稍微拉回休息！`) +
-             `您的目標賣價是 ${stock.targetPrice} 元喔！`;
+      text = `為您切換到${stock.name}，目前現價是 ${stock.currentPrice} 元。` +
+             (isProfit ? `目前賺 ${formattedDiff} 元！` : `目前稍微拉回休息！`);
     }
     Speech.speak(text);
   }
+
+  // ==========================================
+  // 10.4 小股超白話分析視窗管理器 (Stock Summary Modal Manager)
+  // ==========================================
+  const StockSummaryModalManager = {
+    currentSpeechText: '',
+
+    init() {
+      const btnSpeakStock = document.getElementById('btn-speak-current-stock');
+      if (btnSpeakStock) {
+        btnSpeakStock.onclick = () => this.open();
+      }
+
+      const btnClose = document.getElementById('btn-close-summary-modal');
+      if (btnClose) {
+        btnClose.onclick = () => this.close();
+      }
+
+      const btnReplay = document.getElementById('btn-replay-summary-voice');
+      if (btnReplay) {
+        btnReplay.onclick = () => {
+          if (this.currentSpeechText) {
+            Speech.speak(this.currentSpeechText);
+          }
+        };
+      }
+    },
+
+    open() {
+      const modal = document.getElementById('stockSummaryModal');
+      if (!modal) return;
+
+      const elder = getActiveElder();
+      const isTw = (elder.language === 'taiwanese');
+      const stocks = elder.stocks || [];
+      const stock = stocks[currentStockIndex];
+      if (!stock) return;
+
+      const isProfit = (stock.currentPrice >= stock.buyPrice);
+      const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
+      const pct = Math.abs(((stock.currentPrice - stock.buyPrice) / stock.buyPrice) * 100).toFixed(1);
+      const formattedDiff = (Math.abs(diff) >= 10000) ? (Math.abs(diff) / 10000).toFixed(1) + ' 萬' : Math.abs(diff).toLocaleString();
+
+      // 1. 標題
+      const titleEl = document.getElementById('summary-stock-title');
+      if (titleEl) titleEl.textContent = `${stock.name} (${stock.id})`;
+
+      // 2. 狀態膠囊
+      const statusPill = document.getElementById('summary-status-pill');
+      if (statusPill) {
+        if (isProfit) {
+          statusPill.className = 'summary-status-pill';
+          statusPill.textContent = `🟢 目前現況：賺錢中 (+${pct}%)`;
+        } else {
+          statusPill.className = 'summary-status-pill is-loss';
+          statusPill.textContent = `🔵 目前現況：休息待漲 (-${pct}%)`;
+        }
+      }
+
+      // 3. 超白話超短核心結論
+      const verdictEl = document.getElementById('summary-verdict-title');
+      if (verdictEl) {
+        if (isProfit) {
+          verdictEl.textContent = `「走勢很穩，現賺 ${formattedDiff} 元，安心放著領分紅！」`;
+        } else {
+          verdictEl.textContent = `「目前稍微拉回休息，好公司不用慌，耐心放著等起飛！」`;
+        }
+      }
+
+      // 4. 三大白話要點 (超大字體、不超出一頁)
+      const p1 = document.getElementById('summary-point-1');
+      const p2 = document.getElementById('summary-point-2');
+      const p3 = document.getElementById('summary-point-3');
+
+      if (p1) {
+        p1.textContent = isProfit
+          ? `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，現賺 ${formattedDiff} 元！`
+          : `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，目前差 ${formattedDiff} 元。`;
+      }
+
+      if (p2) {
+        const gap = stock.targetPrice - stock.currentPrice;
+        p2.textContent = gap > 0
+          ? `距離目標賣價 ${stock.targetPrice} 元只差 ${gap} 元，達標會自動通知晚輩。`
+          : `已經衝過目標賣價 ${stock.targetPrice} 元囉！隨時可以讓晚輩代為獲利了結！`;
+      }
+
+      if (p3) {
+        p3.textContent = `小股貼心話：不用天天盯盤，多喝溫水、放寬心散散步！`;
+      }
+
+      // 5. 產生超白話語音朗讀內容
+      if (isTw) {
+        this.currentSpeechText = isProfit
+          ? `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，趁了 ${formattedDiff} 圓！走勢足穩，安心放著領分紅，多飲溫水出去行一行喔！`
+          : `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，稍微休息拉回，好公司免煩惱，耐心放著等起飛喔！`;
+      } else {
+        this.currentSpeechText = isProfit
+          ? `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，現賺 ${formattedDiff} 元！走勢很穩，安心放著領分紅，喝杯溫水出去散散步喔！`
+          : `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，目前稍微拉回休息，好公司不用慌，耐心放著等起飛喔！`;
+      }
+
+      modal.classList.remove('hidden');
+      Speech.speak(this.currentSpeechText);
+    },
+
+    close() {
+      const modal = document.getElementById('stockSummaryModal');
+      if (modal) modal.classList.add('hidden');
+      Speech.cancel();
+    }
+  };
 
   // ==========================================
   // 10.5 每 5 分鐘大腦健腦操浮動彈窗管理器 (Brain Modal Manager)
@@ -1455,6 +1572,7 @@
     }
 
     // 啟動每 5 分鐘健腦操浮動彈窗
+    StockSummaryModalManager.init();
     BrainModalManager.init();
 
     document.getElementById('btn-dismiss-night').onclick = () => {
@@ -1481,9 +1599,11 @@
       renderPocketMoney();
     };
 
-    // 註冊 Service Worker
+    // 註冊 Service Worker 並強制更新快取 (v1.19)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => {
+      navigator.serviceWorker.register('sw.js?v=1.19').then(reg => {
+        reg.update();
+      }).catch(err => {
         console.warn('SW 註冊忽略（本地預覽模式）', err);
       });
     }

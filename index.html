@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0B1329">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta property="og:title" content="小股同學 - (陳新昱設計)">
   <meta property="og:description" content="預防長輩失智的 [安全] 炒股神器
 AI互動陪伴.給予正向情緒價值">
@@ -14,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=1.19">
 </head>
 <body class="theme-senior">
 
@@ -48,7 +51,7 @@ AI互動陪伴.給予正向情緒價值">
     📲 加入主畫面
   </button>
 
-  <!-- 頂部導覽列 (極簡化：品牌 + 晚輩設定齒輪) -->
+  <!-- 頂部極簡導覽列 (左側: 小圖+小股同學 / 右側: 齒輪圖形) -->
   <header class="app-header">
     <div class="header-content">
       <div class="header-brand">
@@ -56,9 +59,9 @@ AI互動陪伴.給予正向情緒價值">
         <span class="header-brand-title">小股同學</span>
       </div>
 
-      <!-- 晚輩專用齒輪設定按鈕 -->
+      <!-- 晚輩專用齒輪設定按鈕 (僅齒輪圖形) -->
       <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定">
-        ⚙️ 設定
+        ⚙️
       </button>
     </div>
   </header>
@@ -88,13 +91,10 @@ AI互動陪伴.給予正向情緒價值">
             <span id="view-stock-name" class="row-val val-stock-name">台積電 (2330)</span>
           </div>
 
-          <!-- 順序 2. 目前價格 -->
+          <!-- 順序 2. 目前價格 (已取消跳動標籤，不強制換行) -->
           <div class="stock-view-row stock-view-price-row">
             <span class="row-label">目前價格:</span>
-            <div class="price-val-group">
-              <span id="view-current-price" class="row-val val-current-price">980 元</span>
-              <span id="view-tick-badge" class="tick-diff-badge tick-flat">⚡ 剛才跳動：平盤</span>
-            </div>
+            <span id="view-current-price" class="row-val val-current-price">980 元</span>
           </div>
 
           <!-- 順序 3. 買入價格 -->
@@ -109,10 +109,10 @@ AI互動陪伴.給予正向情緒價值">
             <span id="view-shares" class="row-val val-bold">1 張 (1,000 股)</span>
           </div>
 
-          <!-- 順序 5. 目前賺賠 -->
+          <!-- 順序 5. 目前賺賠 (賺=紅字 / 賠=綠字) -->
           <div class="stock-view-row stock-view-profit-row">
             <span class="row-label">目前賺賠:</span>
-            <span id="view-current-profit" class="row-val val-profit-hero">▲ 賺 130,000 元</span>
+            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 130,000 元</span>
           </div>
 
           <!-- 順序 6. 預計賣價 -->
@@ -121,26 +121,78 @@ AI互動陪伴.給予正向情緒價值">
             <span id="view-target-price" class="row-val val-bold">1,000 元</span>
           </div>
 
-          <!-- 順序 7. 預計賺賠 -->
+          <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 ▲ 賺 / ▼ 賠) -->
           <div class="stock-view-row stock-view-target-profit-row">
             <span class="row-label">預計賺賠:</span>
-            <span id="view-target-profit" class="row-val val-target-hero">▲ 預計賺 150,000 元</span>
+            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 150,000 元</span>
           </div>
 
         </div>
 
-        <!-- 底部微型功能列 (跳動語音播報開關 / 朗讀) -->
+        <!-- 底部微型功能列 (聽小股說這檔 / 跳動播報開關) -->
         <div class="stock-view-footer">
-          <button id="btn-toggle-tick-voice" class="btn-sound-toggle-active" title="切換動態語音播報">
+          <button id="btn-speak-current-stock" class="btn-sound-action" title="聽小股說這檔（開啟超白話分析視窗）">
+            <span>💡 聽小股說這檔</span>
+          </button>
+          <button id="btn-toggle-tick-voice" class="btn-sound-toggle-active" title="切換動態跳動語音播報">
             <span id="tick-voice-icon">🔔</span>
             <span id="tick-voice-text">跳動播報: 開</span>
-          </button>
-          <button id="btn-speak-current-stock" class="btn-sound-action" title="聽小股說這檔">
-            <span>🔊 聽小股說這檔</span>
           </button>
         </div>
       </section>
 
+      <!-- 底部版權與延緩失智陪伴聲明 -->
+      <footer class="app-footer">
+        <p class="footer-design">系統設計與開發：陳新昱</p>
+        <p class="footer-notice">此為延緩失智陪伴工具，實際交易需晚輩代勞</p>
+      </footer>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- B. 小股超白話分析上層視窗 (Stock Summary Modal) -->
+    <!-- ========================================== -->
+    <div id="stockSummaryModal" class="modal-overlay hidden">
+      <div class="modal-card stock-summary-modal-card">
+        <!-- 明顯的右上角 ❌ 關閉按鈕 -->
+        <button id="btn-close-summary-modal" class="btn-modal-close-x" title="關閉視窗">✕</button>
+
+        <div class="summary-modal-header">
+          <div class="summary-avatar-badge">
+            <img src="z_img_app_192.png" alt="小股" class="summary-mini-avatar">
+            <span class="summary-title-badge" id="summary-stock-title">台積電 (2330)</span>
+          </div>
+          <span class="summary-modal-tag">💡 超白話結論</span>
+        </div>
+
+        <div class="summary-modal-body">
+          <div class="summary-key-box" id="summary-key-box">
+            <div class="summary-status-pill" id="summary-status-pill">🟢 目前現況：賺錢中</div>
+            <h3 id="summary-verdict-title" class="summary-verdict-title">「走勢很穩，安心放著領分紅！」</h3>
+          </div>
+
+          <div class="summary-points-list">
+            <div class="summary-point-item">
+              <span class="point-icon">💰</span>
+              <span class="point-text" id="summary-point-1">買入 850 元，現在 980 元，現賺 13 萬元！</span>
+            </div>
+            <div class="summary-point-item">
+              <span class="point-icon">🎯</span>
+              <span class="point-text" id="summary-point-2">距離目標價 1,000 元只差 20 元，達標會通知晚輩。</span>
+            </div>
+            <div class="summary-point-item">
+              <span class="point-icon">☕</span>
+              <span class="point-text" id="summary-point-3">小股建議：不用天天盯盤，喝杯溫水、放寬心散散步！</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-modal-footer">
+          <button id="btn-replay-summary-voice" class="btn-summary-replay">
+            <span>🔊 聽小股再說一次</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ========================================== -->
@@ -406,6 +458,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=1.19"></script>
 </body>
 </html>
