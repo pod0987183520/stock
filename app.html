@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.24">
+  <link rel="stylesheet" href="css/style.css?v=1.25">
   <script>
     // 徹底清除所有 Service Worker 與 CacheStorage
     try {
@@ -31,9 +31,7 @@ AI互動陪伴.給予正向情緒價值">
           for (let k of keys) caches.delete(k);
         });
       }
-      ['xiaogu_stocks_app_data', 'xiaogu_stocks_app_data_v2', 'xiaogu_stocks_app_data_v3', 'xiaogu_stocks_app_data_v4', 'xiaogu_stocks_app_data_v5'].forEach(k => {
-        localStorage.removeItem(k);
-      });
+      
     } catch(e) {}
   </script>
 </head>
@@ -78,9 +76,10 @@ AI互動陪伴.給予正向情緒價值">
       </div>
 
       <!-- 晚輩專用齒輪設定按鈕 (僅齒輪圖形) -->
-      <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定">
-        ⚙️
-      </button>
+      <div class="header-actions">
+        <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面">📲 安裝 App</button>
+        <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定">⚙️</button>
+      </div>
     </div>
   </header>
 
@@ -472,6 +471,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.24"></script>
+  <script src="js/app.js?v=1.25"></script>
 </body>
 </html>

@@ -960,6 +960,85 @@
     }
   }
 
+  
+  // ==========================================
+  // 台股熱門代號智能自動對應庫 (輸入代號秒帶名稱與現價)
+  // ==========================================
+  const TaiwanStockDB = {
+    '2330': { name: '台積電', price: 980 },
+    '2317': { name: '鴻海', price: 185 },
+    '2454': { name: '聯發科', price: 1250 },
+    '2344': { name: '華邦電', price: 28.5 },
+    '2412': { name: '中華電', price: 125 },
+    '2886': { name: '兆豐金', price: 39.8 },
+    '2884': { name: '玉山金', price: 28.5 },
+    '2881': { name: '富邦金', price: 88.5 },
+    '2882': { name: '國泰金', price: 64.2 },
+    '2891': { name: '中信金', price: 36.5 },
+    '2892': { name: '第一金', price: 27.8 },
+    '2880': { name: '華南金', price: 25.6 },
+    '2885': { name: '元大金', price: 31.5 },
+    '2887': { name: '台新金', price: 18.5 },
+    '2883': { name: '開發金', price: 16.2 },
+    '5880': { name: '合庫金', price: 25.8 },
+    '2801': { name: '彰銀', price: 17.8 },
+    '0050': { name: '元大台灣50', price: 180 },
+    '0056': { name: '元大高股息', price: 38.5 },
+    '00878': { name: '國泰永續高股息', price: 22.8 },
+    '00919': { name: '群益台灣精選高息', price: 24.5 },
+    '00929': { name: '復華台灣科技優息', price: 19.8 },
+    '00940': { name: '元大台灣價值高息', price: 9.6 },
+    '2603': { name: '長榮', price: 185 },
+    '2609': { name: '陽明', price: 65.2 },
+    '2615': { name: '萬海', price: 78.5 },
+    '3231': { name: '緯創', price: 105 },
+    '2382': { name: '廣達', price: 285 },
+    '2356': { name: '英業達', price: 46.8 },
+    '2376': { name: '技嘉', price: 265 },
+    '2308': { name: '台達電', price: 395 },
+    '2303': { name: '聯電', price: 54.5 },
+    '3008': { name: '大立光', price: 2650 },
+    '2357': { name: '華碩', price: 560 },
+    '2379': { name: '瑞昱', price: 520 },
+    '2409': { name: '友達', price: 16.5 },
+    '3481': { name: '群創', price: 15.2 },
+    '1101': { name: '台泥', price: 32.5 },
+    '1301': { name: '台塑', price: 56.5 },
+    '1303': { name: '南亞', price: 48.2 },
+    '2002': { name: '中鋼', price: 23.5 },
+    '9910': { name: '豐泰', price: 140 },
+    '9904': { name: '寶成', price: 36.8 },
+    '2912': { name: '統一超', price: 275 },
+    '1216': { name: '統一', price: 82.5 },
+    '2377': { name: '微星', price: 175 },
+    '6669': { name: '緯穎', price: 2200 },
+    '3037': { name: '欣興', price: 155 },
+    '3034': { name: '聯詠', price: 510 },
+    '3661': { name: '世芯-KY', price: 2800 },
+    '2345': { name: '智邦', price: 550 },
+    '3711': { name: '日月光投控', price: 150 },
+    '2888': { name: '新光金', price: 12.8 },
+    '6770': { name: '力積電', price: 21.5 },
+    '2408': { name: '南亞科', price: 52.0 },
+    '2337': { name: '旺宏', price: 26.5 },
+    '5347': { name: '世界', price: 105 }
+  };
+
+  function lookupTaiwanStock(query) {
+    if (!query) return null;
+    query = query.toString().trim();
+    if (TaiwanStockDB[query]) {
+      return Object.assign({ id: query }, TaiwanStockDB[query]);
+    }
+    // 反向搜尋名稱
+    for (let code in TaiwanStockDB) {
+      if (TaiwanStockDB[code].name === query || TaiwanStockDB[code].name.includes(query)) {
+        return Object.assign({ id: code }, TaiwanStockDB[code]);
+      }
+    }
+    return null;
+  }
+
   // 渲染單一股票一屏看板與大頁籤
   function renderSingleStockView() {
     const elder = getActiveElder();
@@ -1426,15 +1505,16 @@
       item.innerHTML = `
         <div class="stock-edit-item-header">
           <span class="stock-item-num">持股 ${idx + 1}</span>
+          <span class="stock-auto-hint" id="auto-hint-${idx}">💡 輸入代號自動帶出名稱與現價</span>
         </div>
         <div class="stock-edit-row">
-          <div class="field-box field-name">
-            <span class="field-mini-label">股票名稱</span>
-            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 台積電">
-          </div>
           <div class="field-box field-id">
-            <span class="field-mini-label">股票代號</span>
-            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2330">
+            <span class="field-mini-label">股票代號 (輸入即自動帶入)</span>
+            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344">
+          </div>
+          <div class="field-box field-name">
+            <span class="field-mini-label">股票名稱 (自動填入)</span>
+            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 華邦電" readonly style="background: rgba(56, 189, 248, 0.08); color: #FEF08A; font-weight: 900;">
           </div>
         </div>
         <div class="stock-edit-row-4">
@@ -1447,16 +1527,47 @@
             <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
           </div>
           <div class="field-box">
-            <span class="field-mini-label">目前價格 (元)</span>
+            <span class="field-mini-label">目前現價 (元)</span>
             <input type="number" class="form-input stock-edit-current" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價">
           </div>
           <div class="field-box">
             <span class="field-mini-label">希望賣價 (元)</span>
-            <input type="number" class="form-input stock-edit-target" data-index="${idx}" value="${stock.targetPrice || 1000}" placeholder="希望賣價">
+            <input type="number" class="form-input stock-edit-target" data-index="${idx}" value="${stock.targetPrice || Math.round(stock.buyPrice * 1.15)}" placeholder="希望賣價">
           </div>
         </div>
       `;
       editorList.appendChild(item);
+
+      // 綁定輸入代號自動帶出名稱與價格
+      const idInput = item.querySelector('.stock-edit-id');
+      const nameInput = item.querySelector('.stock-edit-name');
+      const currentInput = item.querySelector('.stock-edit-current');
+      const buyInput = item.querySelector('.stock-edit-buy');
+      const targetInput = item.querySelector('.stock-edit-target');
+      const hintEl = item.querySelector(`#auto-hint-${idx}`);
+
+      const handleAutoFill = () => {
+        const val = idInput.value.trim();
+        const found = lookupTaiwanStock(val);
+        if (found) {
+          nameInput.value = found.name;
+          currentInput.value = found.price;
+          if (!buyInput.value || parseFloat(buyInput.value) === 0 || parseFloat(buyInput.value) === 850) {
+            buyInput.value = found.price;
+          }
+          if (!targetInput.value || parseFloat(targetInput.value) === 0 || parseFloat(targetInput.value) === 1000) {
+            targetInput.value = Math.round(found.price * 1.15);
+          }
+          if (hintEl) {
+            hintEl.textContent = `✅ 已自動配對：${found.name} ($${found.price}元)`;
+            hintEl.style.color = '#34D399';
+          }
+        }
+      };
+
+      idInput.addEventListener('input', handleAutoFill);
+      idInput.addEventListener('change', handleAutoFill);
+      idInput.addEventListener('blur', handleAutoFill);
     });
   }
 
@@ -1507,6 +1618,31 @@
   // 12. 事件綁定與初始化
   // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
+
+    // 頂端列 📲 安裝 App 按鈕事件
+    const btnHeaderInstall = document.getElementById('btn-header-install');
+    if (btnHeaderInstall) {
+      btnHeaderInstall.onclick = () => {
+        if (window.deferredPrompt) {
+          window.deferredPrompt.prompt();
+          window.deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              btnHeaderInstall.style.display = 'none';
+            }
+            window.deferredPrompt = null;
+          });
+        } else {
+          // iOS Safari 或其他瀏覽器彈出教學
+          const iosModal = document.getElementById('iosInstallModal');
+          if (iosModal) {
+            iosModal.classList.remove('hidden');
+          } else {
+            alert('💡 請點擊瀏覽器選單 ➜「加到主畫面」或「安裝應用程式」，即可將小股同學安裝至手機桌面！');
+          }
+        }
+      };
+    }
+
     Speech.init();
     Recognition.init();
     CloudSync.initLifecycle();

@@ -2135,3 +2135,35 @@ body {
   font-size: 18px;
   font-weight: 700;
 }
+
+
+/* 頂端列右側按鈕群 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-header-install {
+  background: linear-gradient(135deg, #10B981, #059669);
+  border: 1px solid #34D399;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-header-install:active {
+  transform: scale(0.94);
+}
+
+.stock-auto-hint {
+  font-size: 12px;
+  color: #38BDF8;
+  font-weight: 700;
+}
