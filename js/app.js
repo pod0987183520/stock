@@ -394,6 +394,71 @@
   const RealtimeStockService = {
     cache: {},
     inFlight: {},
+    isInitialized: false,
+
+    // 開機立即全量載入全台股與 ETF 最新現價 (TWSE & TPEx OpenAPI)
+    async initLiveDatabase() {
+      if (this.isInitialized) return;
+      try {
+        const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            list.forEach(item => {
+              const c = item.Code ? item.Code.trim().toUpperCase() : '';
+              const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
+              if (c && !isNaN(p) && p > 0) {
+                const itemQuote = {
+                  id: c,
+                  name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name),
+                  price: p,
+                  prevClose: p,
+                  source: 'twse-openapi'
+                };
+                this.cache[c] = { data: itemQuote, timestamp: Date.now() };
+                TaiwanStockDB[c] = {
+                  name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
+                  price: p
+                };
+              }
+            });
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const res = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes', { cache: 'no-store' });
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            list.forEach(item => {
+              const c = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim().toUpperCase() : '';
+              const p = parseFloat((item.Close || '').replace(/,/g, ''));
+              if (c && !isNaN(p) && p > 0) {
+                const itemQuote = {
+                  id: c,
+                  name: item.CompanyName ? item.CompanyName.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name),
+                  price: p,
+                  prevClose: p,
+                  source: 'tpex-openapi'
+                };
+                this.cache[c] = { data: itemQuote, timestamp: Date.now() };
+                TaiwanStockDB[c] = {
+                  name: item.CompanyName ? item.CompanyName.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
+                  price: p
+                };
+              }
+            });
+          }
+        }
+      } catch (e) {}
+
+      this.isInitialized = true;
+      console.log('台灣股市即時行情全量字典庫初始化完成！總檔數:', Object.keys(TaiwanStockDB).length);
+
+      // 同步刷新當前長輩自選股票
+      this.syncAllElderStocks();
+    },
 
     // 取得單檔台股即時成交價與名稱 (自動支援上市/上櫃/ETF)
     async fetchQuote(rawCode) {
@@ -406,7 +471,12 @@
         return cached.data;
       }
 
-      // 2. 請求去重合流 (In-flight deduplication)
+      // 2. 若全量字典庫尚未初始化，先觸發初始化
+      if (!this.isInitialized) {
+        this.initLiveDatabase().catch(() => {});
+      }
+
+      // 3. 請求去重合流 (In-flight deduplication)
       if (this.inFlight[code]) {
         return this.inFlight[code];
       }
@@ -414,56 +484,53 @@
       const queryPromise = (async () => {
         let quote = null;
 
-        // 策略 A: FinMind API (CORS 開放，高可靠即時台股報價)
+        // 策略 A: 證交所 TWSE OpenAPI 全量/單檔匹配
         try {
-          const d = new Date();
-          d.setDate(d.getDate() - 10);
-          const startStr = d.toISOString().split('T')[0];
-          const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${startStr}`;
-          const res = await fetch(fmUrl);
+          const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
           if (res.ok) {
-            const json = await res.json();
-            if (json && Array.isArray(json.data) && json.data.length > 0) {
-              const latest = json.data[json.data.length - 1];
-              if (latest && latest.close) {
-                quote = {
-                  id: code,
-                  name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || `股票(${code})`,
-                  price: parseFloat(latest.close),
-                  prevClose: parseFloat(latest.open || latest.close),
-                  source: 'finmind'
-                };
+            const list = await res.json();
+            if (Array.isArray(list)) {
+              for (let i = 0; i < list.length; i++) {
+                const item = list[i];
+                const c = item.Code ? item.Code.trim().toUpperCase() : '';
+                const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
+                if (c && !isNaN(p) && p > 0) {
+                  TaiwanStockDB[c] = {
+                    name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
+                    price: p
+                  };
+                  if (c === code) {
+                    quote = {
+                      id: c,
+                      name: TaiwanStockDB[c].name,
+                      price: p,
+                      prevClose: p,
+                      source: 'twse-openapi'
+                    };
+                  }
+                }
               }
             }
           }
         } catch (e) {}
 
-        // 策略 B: 證交所 TWSE OpenAPI (全台股每日最新收盤價/現價，開放 CORS)
+        // 策略 B: FinMind API (CORS 開放，高可靠即時台股報價)
         if (!quote) {
           try {
-            const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+            const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=2024-01-01`;
+            const res = await fetch(fmUrl);
             if (res.ok) {
-              const list = await res.json();
-              if (Array.isArray(list)) {
-                list.forEach(item => {
-                  const c = item.Code ? item.Code.trim().toUpperCase() : '';
-                  const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
-                  if (c && !isNaN(p) && p > 0) {
-                    const itemQuote = {
-                      id: c,
-                      name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.Name || `股票(${c})`,
-                      price: p,
-                      prevClose: p,
-                      source: 'twse-openapi'
-                    };
-                    this.cache[c] = { data: itemQuote, timestamp: Date.now() };
-                    if (TaiwanStockDB[c]) {
-                      TaiwanStockDB[c].price = p;
-                    }
-                  }
-                });
-                if (this.cache[code]) {
-                  quote = this.cache[code].data;
+              const json = await res.json();
+              if (json && Array.isArray(json.data) && json.data.length > 0) {
+                const latest = json.data[json.data.length - 1];
+                if (latest && latest.close) {
+                  quote = {
+                    id: code,
+                    name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || `股票(${code})`,
+                    price: parseFloat(latest.close),
+                    prevClose: parseFloat(latest.open || latest.close),
+                    source: 'finmind'
+                  };
                 }
               }
             }
@@ -1539,7 +1606,15 @@
     },
     "0050": {
         "name": "元大台灣50",
-        "price": 180
+        "price": 104.65
+    },
+    "0051": {
+        "name": "元大中型100",
+        "price": 142.0
+    },
+    "0052": {
+        "name": "富邦科技",
+        "price": 60.85
     },
     "0056": {
         "name": "元大高股息",
