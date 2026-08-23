@@ -1599,14 +1599,11 @@
       renderPocketMoney();
     };
 
-    // 註冊 Service Worker 並強制更新快取 (v1.19)
+    // 徹底註銷 Service Worker，保證每次都加載最新版本
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.21').then(reg => {
-        reg.update();
-      }).catch(err => {
-        console.warn('SW 註冊忽略（本地預覽模式）', err);
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (let r of regs) r.unregister();
       });
-    }
-  });
+    });
 
 })();
