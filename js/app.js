@@ -1424,21 +1424,43 @@
       const item = document.createElement('div');
       item.className = 'stock-edit-item';
       item.innerHTML = `
-        <div class="input-row" style="margin-bottom: 8px;">
-          <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="股票名稱">
-          <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="代碼">
+        <div class="stock-edit-item-header">
+          <span class="stock-item-num">持股 ${idx + 1}</span>
         </div>
-        <div class="input-row">
-          <input type="number" class="form-input stock-edit-buy" data-index="${idx}" value="${stock.buyPrice}" placeholder="買價">
-          <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
-          <input type="number" class="form-input stock-edit-current" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價">
+        <div class="stock-edit-row">
+          <div class="field-box field-name">
+            <span class="field-mini-label">股票名稱</span>
+            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 台積電">
+          </div>
+          <div class="field-box field-id">
+            <span class="field-mini-label">股票代號</span>
+            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2330">
+          </div>
+        </div>
+        <div class="stock-edit-row-4">
+          <div class="field-box">
+            <span class="field-mini-label">買入價格 (元)</span>
+            <input type="number" class="form-input stock-edit-buy" data-index="${idx}" value="${stock.buyPrice}" placeholder="買價">
+          </div>
+          <div class="field-box">
+            <span class="field-mini-label">買入數量 (股)</span>
+            <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
+          </div>
+          <div class="field-box">
+            <span class="field-mini-label">目前價格 (元)</span>
+            <input type="number" class="form-input stock-edit-current" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價">
+          </div>
+          <div class="field-box">
+            <span class="field-mini-label">希望賣價 (元)</span>
+            <input type="number" class="form-input stock-edit-target" data-index="${idx}" value="${stock.targetPrice || 1000}" placeholder="希望賣價">
+          </div>
         </div>
       `;
       editorList.appendChild(item);
     });
   }
 
-  function saveCaregiverSettings() {
+  window.saveCaregiverSettings = function saveCaregiverSettings() {
     const selectedRole = document.querySelector('input[name="deviceRole"]:checked').value;
     AppState.deviceRole = selectedRole;
 
@@ -1465,6 +1487,10 @@
         currentElder.stocks[i].buyPrice = parseFloat(buys[i].value) || currentElder.stocks[i].buyPrice;
         currentElder.stocks[i].shares = parseInt(shares[i].value) || currentElder.stocks[i].shares;
         currentElder.stocks[i].currentPrice = parseFloat(currents[i].value) || currentElder.stocks[i].currentPrice;
+        const targets = document.querySelectorAll('.stock-edit-target');
+        if (targets[i]) {
+          currentElder.stocks[i].targetPrice = parseFloat(targets[i].value) || currentElder.stocks[i].targetPrice;
+        }
       }
     });
 

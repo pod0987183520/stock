@@ -2037,3 +2037,101 @@ body {
   50% { transform: translateY(-12px); }
 }
 
+
+
+/* 晚輩管理後台增強排版 */
+.form-label-compact {
+  font-size: 19px !important;
+  font-weight: 800;
+  color: #E2E8F0;
+  white-space: nowrap;
+}
+
+.title-input-compact {
+  width: 95px !important;
+  flex: 0 0 95px !important;
+  text-align: center;
+  font-weight: 800;
+  font-size: 20px !important;
+  padding: 8px 6px !important;
+}
+
+.phone-input-expanded {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  font-size: 20px !important;
+  letter-spacing: 0.5px;
+}
+
+.stock-edit-item {
+  background: #0F172A;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stock-edit-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.stock-item-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: #38BDF8;
+}
+
+.stock-edit-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.field-name {
+  flex: 1.6 1 0;
+  min-width: 0;
+}
+
+.field-id {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.stock-edit-row-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .stock-edit-row-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.field-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-mini-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94A3B8;
+  white-space: nowrap;
+}
+
+.field-box .form-input {
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
