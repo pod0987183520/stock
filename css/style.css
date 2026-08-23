@@ -213,6 +213,34 @@ body {
   color: var(--text-secondary);
 }
 
+/* 雙語切換按鈕 (國語/台語) */
+.btn-lang-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #38BDF8;
+  color: #38BDF8;
+  font-weight: 800;
+  font-size: 20px;
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  min-height: 52px;
+  transition: all 0.2s ease;
+}
+
+.btn-lang-toggle.active-tw {
+  background: linear-gradient(135deg, #059669, #10B981);
+  border-color: #6EE7B7;
+  color: #FFFFFF;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-lang-toggle:active {
+  transform: scale(0.95);
+}
+
 /* 語音大按鈕 */
 .btn-voice-toggle {
   background: linear-gradient(135deg, #F59E0B, #D97706);
@@ -576,7 +604,245 @@ body {
   border-left: 6px solid var(--color-gold);
 }
 
-/* 3. AI 溫情建議 */
+/* 2.5 菜市場生活趣味算數題 */
+.card-market {
+  background: linear-gradient(180deg, #064E3B 0%, #0F2F24 100%);
+  border: 3px solid #10B981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+}
+
+.market-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.market-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.market-tag {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6EE7B7;
+  font-size: 24px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.market-sub-tag {
+  font-size: 18px;
+  color: #A7F3D0;
+  margin-left: 4px;
+}
+
+.btn-refresh-small {
+  background: #1E293B;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #F8FAFC;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-refresh-small:active {
+  background: var(--color-accent);
+  color: #000000;
+}
+
+.market-question-text {
+  font-size: 30px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+
+.btn-mic-market {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: #6EE7B7;
+}
+
+/* 3. 中長期穩健股話題 (向長輩請教) */
+.card-topic {
+  background: linear-gradient(180deg, #1E1B4B 0%, #0F172A 100%);
+  border: 3px solid #818CF8;
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);
+}
+
+.topic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topic-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.topic-tag {
+  background: rgba(99, 102, 241, 0.25);
+  color: #C7D2FE;
+  font-size: 24px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.topic-sub-tag {
+  font-size: 18px;
+  color: #94A3B8;
+  margin-left: 4px;
+}
+
+.topic-stock-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.topic-name {
+  font-size: 32px;
+  font-weight: 900;
+  color: #FEF08A;
+}
+
+.topic-badge-type {
+  background: rgba(251, 191, 36, 0.2);
+  color: #FCD34D;
+  border: 1px solid #F59E0B;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: var(--radius-md);
+}
+
+.topic-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metric-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: #38BDF8;
+}
+
+.topic-dialogue-box {
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 6px solid #818CF8;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.topic-speech {
+  font-size: 26px;
+  line-height: 1.7;
+  color: #F1F5F9;
+}
+
+.topic-opinion-zone {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-top: 10px;
+}
+
+.opinion-prompt {
+  font-size: 24px;
+  font-weight: 800;
+  color: #FDE68A;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.opinion-btn-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.btn-opinion {
+  min-height: 64px;
+  font-size: 26px;
+  font-weight: 900;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.btn-opinion:active {
+  transform: scale(0.96);
+}
+
+.btn-agree {
+  background: linear-gradient(135deg, #10B981, #059669);
+  border: 3px solid #6EE7B7;
+  color: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-cautious {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  border: 3px solid #FDE68A;
+  color: #000000;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.topic-feedback-box {
+  margin-top: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  font-size: 24px;
+  color: #93C5FD;
+  border-left: 6px solid #38BDF8;
+}
+
+/* 4. AI 溫情建議 */
 .card-advice {
   border-left: 8px solid var(--color-accent);
 }

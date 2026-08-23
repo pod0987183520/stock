@@ -63,6 +63,12 @@
         <p id="sub-greeting" class="sub-senior">小股陪您看股票、動動腦</p>
       </div>
 
+      <!-- 語言切換按鈕 (國語/台語) -->
+      <button id="btn-lang-toggle" class="btn-lang-toggle" title="切換國語/台語">
+        <span id="lang-icon">🗣️</span>
+        <span id="lang-text">國語</span>
+      </button>
+
       <!-- 語音播報大按鈕 -->
       <button id="btn-speak-all" class="btn-voice-toggle" title="聽小股說話">
         <span class="voice-icon">🔊</span>
@@ -121,7 +127,101 @@
       </div>
     </section>
 
-    <!-- 3. AI 溫情口語建議卡片 -->
+    <!-- 2.5 🥦 菜市場生活趣味算數題 (打發時間、等候開盤隨玩) -->
+    <section class="market-math-section" aria-label="菜市場算算看">
+      <div class="card card-market">
+        <div class="market-header">
+          <div class="market-title-group">
+            <span class="market-tag">🥦 菜市場買菜算算看</span>
+            <span class="market-sub-tag">隨玩打發時間．鍛鍊算數</span>
+          </div>
+          <button id="btn-next-market-math" class="btn-refresh-small" title="換一題算算看">🔄 換一題</button>
+        </div>
+
+        <h3 id="market-question" class="market-question-text">
+          一把青江菜 20 元，一顆高麗菜 45 元，兩樣買起來總共多少錢？
+        </h3>
+
+        <div class="market-interactive-zone">
+          <button id="btn-market-mic" class="btn-mic btn-mic-market" title="按我開口算">
+            <span class="mic-icon">🎙️</span>
+            <span id="market-mic-status" class="mic-status">聽題目 / 開口答</span>
+          </button>
+
+          <div id="market-options-container" class="quiz-options-grid">
+            <!-- 動態生成買菜選項 -->
+          </div>
+        </div>
+
+        <div id="market-feedback" class="quiz-feedback-box hidden">
+          <p id="market-feedback-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 💬 小股向您請教：中長期穩健股話題 (基於客觀數據，向長輩請教經驗) -->
+    <section class="stock-topic-section" aria-label="中長期穩健股話題">
+      <div class="card card-topic">
+        <div class="topic-header">
+          <div class="topic-title-group">
+            <span class="topic-tag">💬 小股向您請教</span>
+            <span class="topic-sub-tag">中長期穩健股話題．非短線炒作</span>
+          </div>
+          <button id="btn-next-topic" class="btn-refresh-small" title="換個股票聊聊">🔄 換一檔聊聊</button>
+        </div>
+
+        <div class="topic-body">
+          <div class="topic-stock-info">
+            <div class="topic-stock-title">
+              <span id="topic-stock-name" class="topic-name">中華電 (2412)</span>
+              <span id="topic-badge-type" class="topic-badge-type">電信龍頭．防禦首選</span>
+            </div>
+
+            <div class="topic-metrics-grid">
+              <div class="metric-item">
+                <span class="metric-label">近5年平均殖利率</span>
+                <span id="topic-yield" class="metric-value">約 4.2%</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">連續配息紀錄</span>
+                <span id="topic-div-years" class="metric-value">連續 26 年</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">抗跌與波動評級</span>
+                <span id="topic-stability" class="metric-value">⭐⭐⭐⭐⭐ 極高</span>
+              </div>
+            </div>
+
+            <div class="topic-dialogue-box">
+              <p id="topic-speech-text" class="topic-speech">
+                「伯伯，小股最近做功課，覺得中華電信長期配息穩定，遇到市場震盪也很抗跌，很適合作為中長期領股利的防守資產。您在股市經驗豐富，您覺得小股的看法怎麼樣呢？」
+              </p>
+              <button id="btn-read-topic" class="btn-sound-small" title="聽小股請教">🔊 聽小股說</button>
+            </div>
+
+            <!-- 長輩反饋意見按鈕區 -->
+            <div class="topic-opinion-zone">
+              <p class="opinion-prompt">👇 您覺得小股的看法如何呢？</p>
+              <div class="opinion-btn-group">
+                <button id="btn-agree-topic" class="btn-opinion btn-agree">
+                  👍 我覺得有道理（認同）
+                </button>
+                <button id="btn-cautious-topic" class="btn-opinion btn-cautious">
+                  🧐 我再觀察看看（保守）
+                </button>
+              </div>
+            </div>
+
+            <!-- 小股回饋回應 -->
+            <div id="topic-feedback-box" class="topic-feedback-box hidden">
+              <p id="topic-feedback-text"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AI 溫情口語建議卡片 -->
     <section class="ai-advice-section" aria-label="小股溫馨建議">
       <div class="card card-advice">
         <div class="advice-header">
@@ -134,7 +234,7 @@
       </div>
     </section>
 
-    <!-- 4. 孝親零用金 / 收到紅包紀錄 -->
+    <!-- 5. 孝親零用金 / 收到紅包紀錄 -->
     <section class="pocket-money-section" aria-label="孝親零用金">
       <div class="card card-pocket">
         <div class="pocket-header">
