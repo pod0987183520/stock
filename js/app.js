@@ -400,6 +400,7 @@
   // 2.5 台灣股市名稱字典與基準價兜底庫 (Taiwan Stock Dict & Fallback Base)
   // ==========================================
   const TaiwanStockNames = {
+    // 權值股與半導體
     "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2344": "華邦電",
     "2303": "聯電", "2308": "台達電", "2382": "廣達", "3231": "緯創",
     "2356": "英業達", "2376": "技嘉", "2357": "華碩", "2379": "瑞昱",
@@ -407,29 +408,43 @@
     "2408": "南亞科", "6770": "力積電", "5347": "世界", "2449": "京元電子",
     "3034": "聯詠", "2377": "微星", "6488": "環球晶", "3037": "欣興",
     "2368": "金像電", "8069": "元太", "2409": "友達", "3481": "群創",
+    "3035": "智原", "3017": "奇鋐", "3533": "嘉澤", "6669": "緯穎",
+    "3661": "世芯-KY", "6278": "台表科", "2328": "廣宇", "2353": "宏碁",
+    "2354": "鴻準", "2371": "大同", "2383": "台光電", "2404": "漢唐",
+    "2324": "仁寶", "2313": "華通", "2327": "國巨", "2347": "聯強",
+    "2352": "佳世達", "2355": "敬鵬", "2360": "致茂", "2362": "藍天",
+    "2365": "昆盈", "2385": "群光", "2388": "威盛", "2401": "凌陽",
+    "2458": "義隆", "3006": "晶豪科", "3044": "健鼎", "3702": "大聯大",
+    "6239": "力成", "6269": "台郡", "8046": "南電", "3443": "創意",
+    "3529": "力旺", "5269": "祥碩", "6415": "矽力*-KY", "6531": "愛普*",
+    // 金融股
     "2881": "富邦金", "2882": "國泰金", "2886": "兆豐金", "2891": "中信金",
     "2884": "玉山金", "2892": "第一金", "2880": "華南金", "2885": "元大金",
     "2883": "開發金", "2887": "台新金", "2890": "永豐金", "5880": "合庫金",
     "2801": "彰銀", "2834": "臺企銀", "2809": "京城銀", "2889": "國票金",
-    "5876": "上海商銀", "5871": "中租-KY", "9941": "裕融", "2412": "中華電",
-    "3045": "台灣大", "4904": "遠傳", "2603": "長榮", "2609": "陽明",
-    "2615": "萬海", "2605": "新興", "2618": "長榮航", "2610": "華航",
-    "2637": "慧洋-KY", "1101": "台泥", "1102": "亞泥", "1301": "台塑",
-    "1303": "南亞", "1326": "台化", "6505": "台塑化", "2002": "中鋼",
-    "2006": "東和鋼鐵", "9958": "世紀鋼", "1519": "華城", "1503": "士電",
-    "1504": "東元", "1513": "中興電", "1514": "亞力", "9910": "豐泰",
-    "9904": "寶成", "2912": "統一超", "1216": "統一", "6176": "瑞儀",
-    "1476": "儒鴻", "1477": "聚陽", "6547": "高端疫苗",
+    "5876": "上海商銀", "5871": "中租-KY", "9941": "裕融",
+    // 傳產與電信
+    "2412": "中華電", "3045": "台灣大", "4904": "遠傳", "2603": "長榮",
+    "2609": "陽明", "2615": "萬海", "2605": "新興", "2618": "長榮航",
+    "2610": "華航", "2637": "慧洋-KY", "1101": "台泥", "1102": "亞泥",
+    "1301": "台塑", "1303": "南亞", "1326": "台化", "6505": "台塑化",
+    "2002": "中鋼", "2006": "東和鋼鐵", "9958": "世紀鋼", "1519": "華城",
+    "1503": "士電", "1504": "東元", "1513": "中興電", "1514": "亞力",
+    "9910": "豐泰", "9904": "寶成", "2912": "統一超", "1216": "統一",
+    "6176": "瑞儀", "1476": "儒鴻", "1477": "聚陽", "6547": "高端疫苗",
+    // 熱門 ETF 全系列
     "0050": "元大台灣50", "0051": "元大中型100", "0052": "富邦科技",
     "0056": "元大高股息", "00878": "國泰永續高股息", "00919": "群益台灣精選高息",
     "00929": "復華台灣科技優息", "00940": "元大台灣價值高息", "006208": "富邦台50",
     "00713": "元大台灣高息低波", "00918": "大華優利高填息30", "00915": "凱基優選高股息30",
-    "00881": "國泰台灣5G+", "00830": "國泰費城半導體", "00646": "元大S&P500", "00662": "富邦NASDAQ"
+    "00881": "國泰台灣5G+", "00830": "國泰費城半導體", "00646": "元大S&P500", "00662": "富邦NASDAQ",
+    "00939": "統一台灣高息動能", "00936": "台新臺灣永續高息中小型", "00934": "中信成長高股息"
   };
 
   const TaiwanStockBasePrices = {
     "2330": 2410, "2317": 205, "2454": 1550, "2344": 181.0,
     "2303": 52.5, "2308": 410, "2382": 290, "3231": 115,
+    "2328": 44.9, "2353": 48.2, "2354": 92.0, "2371": 42.5,
     "2412": 136.5, "2886": 42.0, "2881": 92.5, "2882": 68.0,
     "2891": 36.5, "2884": 29.8, "2603": 195, "2609": 68.5,
     "2615": 82.0, "2002": 23.5, "1101": 32.5, "1301": 56.5,
@@ -442,6 +457,11 @@
     query = query.toString().trim().toUpperCase();
     if (TaiwanStockNames[query]) {
       return { id: query, name: TaiwanStockNames[query], basePrice: TaiwanStockBasePrices[query] || null };
+    }
+    if (RealtimeStockService.twseCache && RealtimeStockService.twseCache[query]) {
+      const item = RealtimeStockService.twseCache[query];
+      TaiwanStockNames[query] = item.name;
+      return { id: query, name: item.name, basePrice: item.price || null };
     }
     for (let code in TaiwanStockNames) {
       if (TaiwanStockNames[code] === query || TaiwanStockNames[code].includes(query)) {
@@ -460,6 +480,52 @@
     inFlight: {},
     twseCache: null,
     twseCacheTime: 0,
+
+    // 開機全量預載證交所與櫃買中心全台股代碼與名稱字典 (支援全市場千檔股票秒解析)
+    async preloadStockDatabase() {
+      try {
+        const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            if (!this.twseCache) this.twseCache = {};
+            list.forEach(item => {
+              if (item.Code && item.Name) {
+                TaiwanStockNames[item.Code] = item.Name;
+                this.twseCache[item.Code] = {
+                  name: item.Name,
+                  price: parseFloat(item.ClosingPrice ? item.ClosingPrice.replace(/,/g, '') : 0),
+                  date: item.Date
+                };
+              }
+            });
+            this.twseCacheTime = Date.now();
+          }
+        }
+      } catch(e) {}
+
+      try {
+        const res2 = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes');
+        if (res2.ok) {
+          const list2 = await res2.json();
+          if (Array.isArray(list2)) {
+            list2.forEach(item => {
+              const code = item.SecuritiesCompanyCode;
+              const name = item.CompanyName;
+              if (code && name) {
+                TaiwanStockNames[code] = name;
+                if (!this.twseCache) this.twseCache = {};
+                this.twseCache[code] = {
+                  name: name,
+                  price: parseFloat(item.Close ? item.Close.replace(/,/g, '') : 0),
+                  date: item.Date
+                };
+              }
+            });
+          }
+        }
+      } catch(e) {}
+    },
 
     // 動態計算最近 N 天起始日期 YYYY-MM-DD (縮減 99% 封包，提升連線速度至 < 150ms)
     getRecentStartDate(daysAgo = 10) {
@@ -488,7 +554,7 @@
 
       const queryPromise = (async () => {
         let quote = null;
-        const stockName = (TaiwanStockNames[code]) || `股票(${code})`;
+        let stockName = (TaiwanStockNames[code]) || (this.twseCache && this.twseCache[code]?.name) || `股票(${code})`;
 
         // 策略 1: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價，極速回傳)
         try {
@@ -506,6 +572,10 @@
             if (json && Array.isArray(json.data) && json.data.length > 0) {
               const latest = json.data[json.data.length - 1];
               if (latest && typeof latest.close === 'number') {
+                if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
+                  stockName = this.twseCache[code].name;
+                  TaiwanStockNames[code] = stockName;
+                }
                 quote = {
                   id: code,
                   name: stockName,
@@ -522,7 +592,7 @@
         }
 
         // 策略 2: 證交所 TWSE / 櫃買中心 TPEx 官方開放資料 OpenAPI 備援
-        if (!quote) {
+        if (!quote || quote.name.startsWith('股票(')) {
           try {
             if (!this.twseCache || (Date.now() - this.twseCacheTime > 600000)) {
               const controller = new AbortController();
@@ -535,6 +605,7 @@
                   this.twseCache = {};
                   list.forEach(item => {
                     if (item.Code && item.ClosingPrice) {
+                      TaiwanStockNames[item.Code] = item.Name || stockName;
                       this.twseCache[item.Code] = {
                         name: item.Name || stockName,
                         price: parseFloat(item.ClosingPrice.replace(/,/g, '')),
@@ -547,16 +618,47 @@
               }
             }
 
-            if (this.twseCache && this.twseCache[code] && !isNaN(this.twseCache[code].price)) {
-              quote = {
-                id: code,
-                name: this.twseCache[code].name || stockName,
-                price: this.twseCache[code].price,
-                source: 'twse-openapi'
-              };
+            if (this.twseCache && this.twseCache[code]) {
+              const cachedInfo = this.twseCache[code];
+              if (cachedInfo.name) {
+                stockName = cachedInfo.name;
+                TaiwanStockNames[code] = stockName;
+              }
+              if (!quote && !isNaN(cachedInfo.price)) {
+                quote = {
+                  id: code,
+                  name: stockName,
+                  price: cachedInfo.price,
+                  source: 'twse-openapi'
+                };
+              } else if (quote) {
+                quote.name = stockName;
+              }
             }
           } catch (e) {}
         }
+
+        // 策略 3: 本地基準市價字典庫兜底 (離線/斷網/假日保障)
+        if (!quote && TaiwanStockBasePrices[code]) {
+          quote = {
+            id: code,
+            name: stockName,
+            price: TaiwanStockBasePrices[code],
+            source: 'base-fallback'
+          };
+        }
+
+        if (quote) {
+          this.cache[code] = { data: quote, timestamp: Date.now() };
+        }
+
+        delete this.inFlight[code];
+        return quote;
+      })();
+
+      this.inFlight[code] = queryPromise;
+      return queryPromise;
+    },
 
         // 策略 3: 本地基準市價字典庫兜底 (離線/斷網/假日保障)
         if (!quote && TaiwanStockBasePrices[code]) {
@@ -1206,7 +1308,39 @@
   // ==========================================
   let currentStockIndex = 0;
 
+  function updateLanguageUI() {
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
+    const btn = document.getElementById('btn-toggle-lang');
+    if (btn) {
+      btn.textContent = isTw ? '🎙️ 台語' : '🗣️ 國語';
+      btn.title = isTw ? '目前為台語聲道，點擊切換為國語' : '目前為國語聲道，點擊切換為台語';
+    }
+    const select = document.getElementById('setting-language');
+    if (select) {
+      select.value = elder.language || 'zh-TW';
+    }
+  }
+
+  window.toggleAppLanguage = function toggleAppLanguage() {
+    const elder = getActiveElder();
+    if (elder.language === 'taiwanese') {
+      elder.language = 'zh-TW';
+    } else {
+      elder.language = 'taiwanese';
+    }
+    saveAppState();
+    CloudSync.pushElder(AppState.activeElderId);
+    updateLanguageUI();
+    renderAll();
+    
+    const isTw = (elder.language === 'taiwanese');
+    const msg = isTw ? '切換為台語聲道囉！' : '已切換為國語聲道囉！';
+    Speech.speak(msg);
+  };
+
   function renderAll() {
+    updateLanguageUI();
     const isCaregiver = (AppState.deviceRole === 'caregiver');
     const seniorView = document.getElementById('senior-view-container');
     const caregiverView = document.getElementById('caregiver-view-container');
@@ -1769,6 +1903,8 @@
 
     const currentElder = getActiveElder();
     document.getElementById('setting-app-mode').value = currentElder.mode || 'family';
+    const langSelect = document.getElementById('setting-language');
+    if (langSelect) langSelect.value = currentElder.language || 'zh-TW';
     document.getElementById('setting-contact-name').value = currentElder.contactName || '小明';
     document.getElementById('setting-contact-phone').value = currentElder.contactPhone || '0987654321';
 
@@ -1899,6 +2035,8 @@
 
     const currentElder = getActiveElder();
     currentElder.mode = document.getElementById('setting-app-mode').value;
+    const langSelect = document.getElementById('setting-language');
+    if (langSelect) currentElder.language = langSelect.value;
     currentElder.contactName = document.getElementById('setting-contact-name').value;
     currentElder.contactPhone = document.getElementById('setting-contact-phone').value;
 
@@ -1941,6 +2079,7 @@
     try { Speech.init(); } catch(e) {}
     try { Recognition.init(); } catch(e) {}
     try { CloudSync.initLifecycle(); } catch(e) {}
+    try { RealtimeStockService.preloadStockDatabase(); } catch(e) {}
     initTenClickUnlock();
     renderAll();
 
