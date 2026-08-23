@@ -1242,7 +1242,7 @@
   }
 
   
-  // 長輩超白話金額格式化 (例: 139,000 -> 13萬9千元 / 150,000 -> 15萬元)
+  // 長輩超白話金額精確格式化 (例: 48,800 -> 4萬8千8百元 / 139,000 -> 13萬9千元 / 150,000 -> 15萬元，不四捨五入)
   function formatSeniorMoneyText(num) {
     num = Math.abs(Math.round(num));
     if (num >= 10000) {
@@ -1250,15 +1250,33 @@
       const rem = num % 10000;
       const qian = Math.floor(rem / 1000);
       const bai = Math.floor((rem % 1000) / 100);
+      const shi = Math.floor((rem % 100) / 10);
+      const ge = rem % 10;
       let str = `${wan}萬`;
       if (qian > 0) str += `${qian}千`;
       if (bai > 0) str += `${bai}百`;
+      if (shi > 0) str += `${shi}十`;
+      if (ge > 0) str += `${ge}`;
       return str + '元';
     } else if (num >= 1000) {
       const qian = Math.floor(num / 1000);
-      const bai = Math.floor((num % 1000) / 100);
+      const rem = num % 1000;
+      const bai = Math.floor(rem / 100);
+      const shi = Math.floor((rem % 100) / 10);
+      const ge = rem % 10;
       let str = `${qian}千`;
       if (bai > 0) str += `${bai}百`;
+      if (shi > 0) str += `${shi}十`;
+      if (ge > 0) str += `${ge}`;
+      return str + '元';
+    } else if (num >= 100) {
+      const bai = Math.floor(num / 100);
+      const rem = num % 100;
+      const shi = Math.floor(rem / 10);
+      const ge = rem % 10;
+      let str = `${bai}百`;
+      if (shi > 0) str += `${shi}十`;
+      if (ge > 0) str += `${ge}`;
       return str + '元';
     } else {
       return `${num}元`;
@@ -1314,8 +1332,6 @@
     const priceEl = document.getElementById('view-current-price');
     if (priceEl) priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
 
-    
-
     // 3. 買入價格
     const buyPriceEl = document.getElementById('view-buy-price');
     if (buyPriceEl) buyPriceEl.textContent = `$${stock.buyPrice.toLocaleString()} 元`;
@@ -1357,7 +1373,7 @@
     }
   }
 
-  // 切換股票時之簡短語音播報
+  // 切換股票時之精準語音播報 (100% 依據螢幕顯示金額朗讀，絕不四捨五入簡化)
   function speakCurrentStockBrief() {
     const elder = getActiveElder();
     const isTw = (elder.language === 'taiwanese');
@@ -1365,16 +1381,17 @@
     if (!stock) return;
 
     const isProfit = (stock.currentPrice >= stock.buyPrice);
-    const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
-    const formattedDiff = (Math.abs(diff) >= 10000) ? (Math.abs(diff) / 10000).toFixed(1) + ' 萬' : Math.abs(diff).toLocaleString();
+    const diff = Math.abs((stock.currentPrice - stock.buyPrice) * stock.shares);
+    const moneyText = formatSeniorMoneyText(diff);
 
     let text = '';
     if (isTw) {
+      const twMoney = moneyText.replace(/元/g, '圓');
       text = `切換到${stock.name}，目前現價是 ${stock.currentPrice} 圓。` +
-             (isProfit ? `目前趁 ${formattedDiff} 圓！` : `目前稍微休息待漲！`);
+             (isProfit ? `目前趁 ${twMoney}！` : `目前稍微休息待漲，差 ${twMoney}！`);
     } else {
       text = `為您切換到${stock.name}，目前現價是 ${stock.currentPrice} 元。` +
-             (isProfit ? `目前賺 ${formattedDiff} 元！` : `目前稍微拉回休息！`);
+             (isProfit ? `目前賺 ${moneyText}！` : `目前稍微拉回休息，差 ${moneyText}！`);
     }
     Speech.speak(text);
   }
@@ -1417,9 +1434,9 @@
       if (!stock) return;
 
       const isProfit = (stock.currentPrice >= stock.buyPrice);
-      const diff = (stock.currentPrice - stock.buyPrice) * stock.shares;
+      const diff = Math.abs((stock.currentPrice - stock.buyPrice) * stock.shares);
       const pct = Math.abs(((stock.currentPrice - stock.buyPrice) / stock.buyPrice) * 100).toFixed(1);
-      const formattedDiff = (Math.abs(diff) >= 10000) ? (Math.abs(diff) / 10000).toFixed(1) + ' 萬' : Math.abs(diff).toLocaleString();
+      const moneyText = formatSeniorMoneyText(diff);
 
       // 1. 標題
       const titleEl = document.getElementById('summary-stock-title');
@@ -1441,7 +1458,7 @@
       const verdictEl = document.getElementById('summary-verdict-title');
       if (verdictEl) {
         if (isProfit) {
-          verdictEl.textContent = `「走勢很穩，現賺 ${formattedDiff} 元，安心放著領分紅！」`;
+          verdictEl.textContent = `「走勢很穩，現賺 ${moneyText}，安心放著領分紅！」`;
         } else {
           verdictEl.textContent = `「目前稍微拉回休息，好公司不用慌，耐心放著等起飛！」`;
         }
@@ -1454,8 +1471,8 @@
 
       if (p1) {
         p1.textContent = isProfit
-          ? `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，現賺 ${formattedDiff} 元！`
-          : `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，目前差 ${formattedDiff} 元。`;
+          ? `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，現賺 ${moneyText}！`
+          : `買入 ${stock.buyPrice} 元，現在現價 ${stock.currentPrice} 元，目前差 ${moneyText}。`;
       }
 
       if (p2) {
@@ -1469,14 +1486,15 @@
         p3.textContent = `小股貼心話：不用天天盯盤，多喝溫水、放寬心散散步！`;
       }
 
-      // 5. 產生超白話語音朗讀內容
+      // 5. 產生超白話語音朗讀內容 (100% 同步螢幕金額，絕不四捨五入)
       if (isTw) {
+        const twMoney = moneyText.replace(/元/g, '圓');
         this.currentSpeechText = isProfit
-          ? `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，趁了 ${formattedDiff} 圓！走勢足穩，安心放著領分紅，多飲溫水出去行一行喔！`
+          ? `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，趁了 ${twMoney}！走勢足穩，安心放著領分紅，多飲溫水出去行一行喔！`
           : `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，稍微休息拉回，好公司免煩惱，耐心放著等起飛喔！`;
       } else {
         this.currentSpeechText = isProfit
-          ? `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，現賺 ${formattedDiff} 元！走勢很穩，安心放著領分紅，喝杯溫水出去散散步喔！`
+          ? `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，現賺 ${moneyText}！走勢很穩，安心放著領分紅，喝杯溫水出去散散步喔！`
           : `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，目前稍微拉回休息，好公司不用慌，耐心放著等起飛喔！`;
       }
 
