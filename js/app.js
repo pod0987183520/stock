@@ -2232,7 +2232,7 @@
 
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.33')
+      navigator.serviceWorker.register('sw.js?v=2.00')
         .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }

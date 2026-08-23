@@ -8,6 +8,7 @@
 
 | 版本號 | 快照時間 | 類型 | 核心異動與摘要 | Git Tag |
 | :--- | :--- | :--- | :--- | :--- |
+| **v2.00** | 2026-08-24 00:00 | 🏆 重大里程碑穩定版 (Milestone Stable Release) | 全套系統完成 34 輪迭代優化：①長者無障礙高對比單一卡片一屏全景（紅賺綠賠、大字防折行）②台美股/熱門股代碼自動即時對應與雙長輩 1 對 2 關懷後台 ③中介雲端同步與每 5 分鐘健腦互動浮動彈窗 ④完整移植《1到50遊戲》之「PWA 一鍵安裝 ＋ LINE 智慧跳脫外部瀏覽器」黃金標準（頂端列常駐、安裝後純淨隱藏、移除後即時復現）；全站快取與資源統一升級至正式大版 `v2.00` | `v2.00` |
 | **v1.33** | 2026-08-23 23:12 | 移除殘留 LocalStorage 限制與即時解除遮罩 (Dynamic Re-Install Restoration) | 徹底拔除 LocalStorage 安裝狀態靜態綁架，改採 100% 真實即時環境檢測；當 App 遭使用者卸載後再次於 Chrome 中開啟時，`beforeinstallprompt` 立即清除過期標籤並解除遮罩，使頂端列「📲 安裝App」即時重新復現；升級版本至 `v1.33` | `v1.33` |
 | **v1.32** | 2026-08-23 23:05 | 雙重獨立 App 狀態檢測與安裝按鈕永久隱藏 (Robust Standalone Detection & Auto-Hide) | 建立 7 重 PWA 獨立 App 狀態檢測（display-mode / referrer / source=pwa / localStorage 標記 / getInstalledRelatedApps 異動查詢）；於 HTML 渲染前加入極速 `<script>` 注入 `.is-pwa-standalone` CSS 規則，確保安裝完成後由桌面開啟或 LINE 跳轉開啟 App 時，頂端列「📲 安裝App」100% 隱藏不復現；升級全站快取至 `v1.32` | `v1.32` |
 | **v1.31** | 2026-08-23 22:38 | 頂端列安裝按鈕常駐與事件提早註冊 (Persistent Header Install & Early Event Hook) | 拔除頂端列「📲 安裝App」預設 hidden，在所有主流瀏覽器（Chrome/Safari/Edge）常駐顯示；將 `beforeinstallprompt` 提升至最外層立即監聽避免漏接；若為已安裝的獨立 App 模式 (Standalone) 則自動隱藏避免佔位；升級至 `v1.31` | `v1.31` |
