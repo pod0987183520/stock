@@ -965,11 +965,40 @@
   // 台股熱門代號智能自動對應庫 (輸入代號秒帶名稱與現價)
   // ==========================================
   const TaiwanStockDB = {
+    // 熱門權值與半導體
     '2330': { name: '台積電', price: 980 },
     '2317': { name: '鴻海', price: 185 },
     '2454': { name: '聯發科', price: 1250 },
     '2344': { name: '華邦電', price: 28.5 },
     '2412': { name: '中華電', price: 125 },
+    '2303': { name: '聯電', price: 54.5 },
+    '2308': { name: '台達電', price: 395 },
+    '2382': { name: '廣達', price: 285 },
+    '3231': { name: '緯創', price: 105 },
+    '2356': { name: '英業達', price: 46.8 },
+    '2376': { name: '技嘉', price: 265 },
+    '2357': { name: '華碩', price: 560 },
+    '2379': { name: '瑞昱', price: 520 },
+    '2345': { name: '智邦', price: 550 },
+    '3711': { name: '日月光投控', price: 150 },
+    '3008': { name: '大立光', price: 2650 },
+    '2337': { name: '旺宏', price: 26.5 },
+    '2408': { name: '南亞科', price: 52.0 },
+    '6770': { name: '力積電', price: 21.5 },
+    '5347': { name: '世界', price: 105 },
+    '3034': { name: '聯詠', price: 510 },
+    '3037': { name: '欣興', price: 155 },
+    '3661': { name: '世芯-KY', price: 2800 },
+    '6669': { name: '緯穎', price: 2200 },
+    '2347': { name: '聯強', price: 72 },
+    '2353': { name: '宏碁', price: 45 },
+    '2371': { name: '大同', price: 48 },
+    '2383': { name: '台光電', price: 420 },
+    '2385': { name: '群光', price: 160 },
+    '2449': { name: '京元電子', price: 115 },
+    '2474': { name: '可成', price: 210 },
+
+    // 金融股
     '2886': { name: '兆豐金', price: 39.8 },
     '2884': { name: '玉山金', price: 28.5 },
     '2881': { name: '富邦金', price: 88.5 },
@@ -982,46 +1011,38 @@
     '2883': { name: '開發金', price: 16.2 },
     '5880': { name: '合庫金', price: 25.8 },
     '2801': { name: '彰銀', price: 17.8 },
+    '2888': { name: '新光金', price: 12.8 },
+
+    // 熱門高股息與大盤 ETF
     '0050': { name: '元大台灣50', price: 180 },
     '0056': { name: '元大高股息', price: 38.5 },
     '00878': { name: '國泰永續高股息', price: 22.8 },
     '00919': { name: '群益台灣精選高息', price: 24.5 },
     '00929': { name: '復華台灣科技優息', price: 19.8 },
     '00940': { name: '元大台灣價值高息', price: 9.6 },
+    '006208': { name: '富邦台50', price: 105 },
+    '00713': { name: '元大台灣高息低波', price: 58 },
+
+    // 航運 / 傳產 / 塑化
     '2603': { name: '長榮', price: 185 },
     '2609': { name: '陽明', price: 65.2 },
     '2615': { name: '萬海', price: 78.5 },
-    '3231': { name: '緯創', price: 105 },
-    '2382': { name: '廣達', price: 285 },
-    '2356': { name: '英業達', price: 46.8 },
-    '2376': { name: '技嘉', price: 265 },
-    '2308': { name: '台達電', price: 395 },
-    '2303': { name: '聯電', price: 54.5 },
-    '3008': { name: '大立光', price: 2650 },
-    '2357': { name: '華碩', price: 560 },
-    '2379': { name: '瑞昱', price: 520 },
-    '2409': { name: '友達', price: 16.5 },
-    '3481': { name: '群創', price: 15.2 },
+    '2605': { name: '新興', price: 28.5 },
+    '2618': { name: '長榮航', price: 36.5 },
+    '2610': { name: '華航', price: 22.5 },
     '1101': { name: '台泥', price: 32.5 },
+    '1102': { name: '亞泥', price: 42.0 },
     '1301': { name: '台塑', price: 56.5 },
     '1303': { name: '南亞', price: 48.2 },
+    '1326': { name: '台化', price: 45.0 },
+    '6505': { name: '台塑化', price: 58.0 },
     '2002': { name: '中鋼', price: 23.5 },
     '9910': { name: '豐泰', price: 140 },
     '9904': { name: '寶成', price: 36.8 },
     '2912': { name: '統一超', price: 275 },
     '1216': { name: '統一', price: 82.5 },
-    '2377': { name: '微星', price: 175 },
-    '6669': { name: '緯穎', price: 2200 },
-    '3037': { name: '欣興', price: 155 },
-    '3034': { name: '聯詠', price: 510 },
-    '3661': { name: '世芯-KY', price: 2800 },
-    '2345': { name: '智邦', price: 550 },
-    '3711': { name: '日月光投控', price: 150 },
-    '2888': { name: '新光金', price: 12.8 },
-    '6770': { name: '力積電', price: 21.5 },
-    '2408': { name: '南亞科', price: 52.0 },
-    '2337': { name: '旺宏', price: 26.5 },
-    '5347': { name: '世界', price: 105 }
+    '2409': { name: '友達', price: 16.5 },
+    '3481': { name: '群創', price: 15.2 }
   };
 
   function lookupTaiwanStock(query) {
@@ -1505,16 +1526,16 @@
       item.innerHTML = `
         <div class="stock-edit-item-header">
           <span class="stock-item-num">持股 ${idx + 1}</span>
-          <span class="stock-auto-hint" id="auto-hint-${idx}">💡 輸入代號自動帶出名稱與現價</span>
+          <span class="stock-auto-hint" id="auto-hint-${idx}">💡 輸入代號（如 2344）立即自動對應</span>
         </div>
         <div class="stock-edit-row">
           <div class="field-box field-id">
-            <span class="field-mini-label">股票代號 (輸入即自動帶入)</span>
-            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344">
+            <span class="field-mini-label">股票代號</span>
+            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344" autocomplete="off">
           </div>
           <div class="field-box field-name">
-            <span class="field-mini-label">股票名稱 (自動填入)</span>
-            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 華邦電" readonly style="background: rgba(56, 189, 248, 0.08); color: #FEF08A; font-weight: 900;">
+            <span class="field-mini-label">股票名稱 (自動對應，可修改)</span>
+            <input type="text" class="form-input stock-edit-name" data-index="${idx}" value="${stock.name}" placeholder="如: 華邦電" style="background: rgba(56, 189, 248, 0.12); color: #FEF08A; font-weight: 900;">
           </div>
         </div>
         <div class="stock-edit-row-4">
@@ -1527,7 +1548,7 @@
             <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
           </div>
           <div class="field-box">
-            <span class="field-mini-label">目前現價 (元)</span>
+            <span class="field-mini-label">目前價格 (元)</span>
             <input type="number" class="form-input stock-edit-current" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價">
           </div>
           <div class="field-box">
@@ -1538,7 +1559,6 @@
       `;
       editorList.appendChild(item);
 
-      // 綁定輸入代號自動帶出名稱與價格
       const idInput = item.querySelector('.stock-edit-id');
       const nameInput = item.querySelector('.stock-edit-name');
       const currentInput = item.querySelector('.stock-edit-current');
@@ -1546,28 +1566,52 @@
       const targetInput = item.querySelector('.stock-edit-target');
       const hintEl = item.querySelector(`#auto-hint-${idx}`);
 
-      const handleAutoFill = () => {
-        const val = idInput.value.trim();
-        const found = lookupTaiwanStock(val);
+      // 即時輸入代號對應股票名稱與價格
+      const autoFillByCode = () => {
+        const code = idInput.value.trim();
+        if (!code) return;
+        const found = lookupTaiwanStock(code);
         if (found) {
           nameInput.value = found.name;
           currentInput.value = found.price;
-          if (!buyInput.value || parseFloat(buyInput.value) === 0 || parseFloat(buyInput.value) === 850) {
+          // 若買價為預設 850 或空值，自動建議現價與希望賣價
+          if (!buyInput.value || parseFloat(buyInput.value) === 850 || parseFloat(buyInput.value) === 0) {
             buyInput.value = found.price;
           }
-          if (!targetInput.value || parseFloat(targetInput.value) === 0 || parseFloat(targetInput.value) === 1000) {
+          if (!targetInput.value || parseFloat(targetInput.value) === 1000 || parseFloat(targetInput.value) === 0) {
             targetInput.value = Math.round(found.price * 1.15);
           }
           if (hintEl) {
-            hintEl.textContent = `✅ 已自動配對：${found.name} ($${found.price}元)`;
+            hintEl.textContent = `✅ 已自動對應：${found.name} (現價 $${found.price})`;
             hintEl.style.color = '#34D399';
+          }
+        } else {
+          if (hintEl) {
+            hintEl.textContent = `💡 自訂代號 ${code}，請確認名稱與現價`;
+            hintEl.style.color = '#38BDF8';
           }
         }
       };
 
-      idInput.addEventListener('input', handleAutoFill);
-      idInput.addEventListener('change', handleAutoFill);
-      idInput.addEventListener('blur', handleAutoFill);
+      // 監聽代號輸入
+      idInput.addEventListener('input', autoFillByCode);
+      idInput.addEventListener('keyup', autoFillByCode);
+      idInput.addEventListener('change', autoFillByCode);
+      idInput.addEventListener('blur', autoFillByCode);
+
+      // 監聽名稱輸入 (反向對應代號)
+      nameInput.addEventListener('change', () => {
+        const name = nameInput.value.trim();
+        const found = lookupTaiwanStock(name);
+        if (found) {
+          idInput.value = found.id;
+          currentInput.value = found.price;
+          if (hintEl) {
+            hintEl.textContent = `✅ 已自動對應：${found.name} (${found.id})`;
+            hintEl.style.color = '#34D399';
+          }
+        }
+      });
     });
   }
 
@@ -1619,10 +1663,15 @@
   // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
 
-    // 頂端列 📲 安裝 App 按鈕事件
+    // 頂端列 📲 安裝 App 智慧辨識與安裝引導
     const btnHeaderInstall = document.getElementById('btn-header-install');
     if (btnHeaderInstall) {
       btnHeaderInstall.onclick = () => {
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isLine = /Line/i.test(ua);
+
+        // 1. 若瀏覽器已準備好原生安裝對話框 (Android Chrome)
         if (window.deferredPrompt) {
           window.deferredPrompt.prompt();
           window.deferredPrompt.userChoice.then((choiceResult) => {
@@ -1631,14 +1680,22 @@
             }
             window.deferredPrompt = null;
           });
-        } else {
-          // iOS Safari 或其他瀏覽器彈出教學
+          return;
+        }
+
+        // 2. iOS Safari 顯示蘋果專屬教學
+        if (isIOS) {
           const iosModal = document.getElementById('iosInstallModal');
-          if (iosModal) {
-            iosModal.classList.remove('hidden');
-          } else {
-            alert('💡 請點擊瀏覽器選單 ➜「加到主畫面」或「安裝應用程式」，即可將小股同學安裝至手機桌面！');
-          }
+          if (iosModal) iosModal.classList.remove('hidden');
+          return;
+        }
+
+        // 3. Android / LINE / 其他環境顯示 Android 專屬安裝引導
+        const androidModal = document.getElementById('androidInstallGuideModal');
+        if (androidModal) {
+          androidModal.classList.remove('hidden');
+        } else {
+          alert('📲 請點擊瀏覽器右上角「⋮」➜ 選擇「安裝應用程式」或「加到主畫面」即可安裝到桌面！');
         }
       };
     }
