@@ -660,28 +660,6 @@
       return queryPromise;
     },
 
-        // 策略 3: 本地基準市價字典庫兜底 (離線/斷網/假日保障)
-        if (!quote && TaiwanStockBasePrices[code]) {
-          quote = {
-            id: code,
-            name: stockName,
-            price: TaiwanStockBasePrices[code],
-            source: 'base-fallback'
-          };
-        }
-
-        if (quote) {
-          this.cache[code] = { data: quote, timestamp: Date.now() };
-        }
-
-        delete this.inFlight[code];
-        return quote;
-      })();
-
-      this.inFlight[code] = queryPromise;
-      return queryPromise;
-    },
-
     // 批量刷新長輩自選股票
     async refreshElderStocks(elder) {
       if (!elder || !elder.stocks || elder.stocks.length === 0) return false;
