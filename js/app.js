@@ -206,6 +206,18 @@
       if (!Array.isArray(data.elders[k].stocks) || data.elders[k].stocks.length < 2) {
         data.elders[k].stocks = JSON.parse(JSON.stringify(defaultData.elders[k].stocks));
       }
+      // 自動校正舊版硬編碼歷史過期價格 (例如 2344 曾寫死 28.5，自動更新為最新盤價 181.0)
+      data.elders[k].stocks.forEach(stock => {
+        if (stock.id === '2344' && (stock.currentPrice < 100 || stock.currentPrice === 28.5)) {
+          stock.currentPrice = 181.0;
+        }
+        if (stock.id === '2330' && (stock.currentPrice < 1500 || stock.currentPrice === 980)) {
+          stock.currentPrice = 2410;
+        }
+        if (stock.id === '2412' && stock.currentPrice === 125) {
+          stock.currentPrice = 136.5;
+        }
+      });
     });
     return data;
   }
@@ -402,35 +414,61 @@
       const queryPromise = (async () => {
         let quote = null;
 
-        // 策略 A: 證交所 TWSE OpenAPI (全台股每日最新收盤價/現價，開放 CORS)
+        // 策略 A: FinMind API (CORS 開放，高可靠即時台股報價)
         try {
-          const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+          const d = new Date();
+          d.setDate(d.getDate() - 10);
+          const startStr = d.toISOString().split('T')[0];
+          const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${startStr}`;
+          const res = await fetch(fmUrl);
           if (res.ok) {
-            const list = await res.json();
-            if (Array.isArray(list)) {
-              list.forEach(item => {
-                const c = item.Code ? item.Code.trim().toUpperCase() : '';
-                const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
-                if (c && !isNaN(p) && p > 0) {
-                  const itemQuote = {
-                    id: c,
-                    name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.Name || `股票(${c})`,
-                    price: p,
-                    prevClose: p,
-                    source: 'twse-openapi'
-                  };
-                  this.cache[c] = { data: itemQuote, timestamp: Date.now() };
-                  if (TaiwanStockDB[c]) {
-                    TaiwanStockDB[c].price = p;
-                  }
-                }
-              });
-              if (this.cache[code]) {
-                quote = this.cache[code].data;
+            const json = await res.json();
+            if (json && Array.isArray(json.data) && json.data.length > 0) {
+              const latest = json.data[json.data.length - 1];
+              if (latest && latest.close) {
+                quote = {
+                  id: code,
+                  name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || `股票(${code})`,
+                  price: parseFloat(latest.close),
+                  prevClose: parseFloat(latest.open || latest.close),
+                  source: 'finmind'
+                };
               }
             }
           }
         } catch (e) {}
+
+        // 策略 B: 證交所 TWSE OpenAPI (全台股每日最新收盤價/現價，開放 CORS)
+        if (!quote) {
+          try {
+            const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+            if (res.ok) {
+              const list = await res.json();
+              if (Array.isArray(list)) {
+                list.forEach(item => {
+                  const c = item.Code ? item.Code.trim().toUpperCase() : '';
+                  const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
+                  if (c && !isNaN(p) && p > 0) {
+                    const itemQuote = {
+                      id: c,
+                      name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.Name || `股票(${c})`,
+                      price: p,
+                      prevClose: p,
+                      source: 'twse-openapi'
+                    };
+                    this.cache[c] = { data: itemQuote, timestamp: Date.now() };
+                    if (TaiwanStockDB[c]) {
+                      TaiwanStockDB[c].price = p;
+                    }
+                  }
+                });
+                if (this.cache[code]) {
+                  quote = this.cache[code].data;
+                }
+              }
+            }
+          } catch (e) {}
+        }
 
         // 若為櫃買中心上櫃股票且尚未查得，查詢 TPEx OpenAPI
         if (!quote) {
@@ -2294,6 +2332,11 @@
       idInput.addEventListener('keyup', handleIdChange);
       idInput.addEventListener('change', handleIdChange);
       idInput.addEventListener('blur', handleIdChange);
+
+      // 初始打開後台時若已有代號，立即執行一次對應與即時聯網同步
+      if (idInput.value.trim()) {
+        handleIdChange();
+      }
     });
   }
 
@@ -2441,11 +2484,24 @@
       if (btnHeader) btnHeader.classList.remove('hidden');
     }
 
-    // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
+    // 註冊標準 PWA Service Worker (滿足一鍵安裝條件 + 智能自動熱更新)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=2.00')
-        .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
+      navigator.serviceWorker.register('sw.js?v=2.01')
+        .then((reg) => {
+          console.log('小股同學 Service Worker 註冊成功:', reg.scope);
+          // 每次開啟或進入頁面時主動檢查是否有新版本發布
+          reg.update().catch(() => {});
+        })
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
+
+      // 當新的 Service Worker 啟用接管時，自動靜默重新載入最新資源（長輩完全免手動重裝）
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
   });
 
