@@ -1,10 +1,10 @@
-const CACHE_NAME = 'xiaogu-pwa-cache-v2.02';
+const CACHE_NAME = 'xiaogu-pwa-cache-v2.03';
 
 const ASSETS_TO_CACHE = [
   'index.html',
   'app.html',
-  'css/style.css?v=2.02',
-  'js/app.js?v=2.02',
+  'css/style.css?v=2.03',
+  'js/app.js?v=2.03',
   'manifest.json',
   'z_img_app_192.png',
   'z_img_app_512.png',

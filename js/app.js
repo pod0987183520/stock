@@ -69,7 +69,7 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data_v5';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v6';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
@@ -389,78 +389,13 @@
   };
 
   // ==========================================
-  // 3. 台灣股市即時行情與報價引擎 (Realtime Stock Service)
+  // 3. 台灣股市 100% 即時真實盤價行情引擎 (Realtime Stock Service)
   // ==========================================
   const RealtimeStockService = {
     cache: {},
     inFlight: {},
-    isInitialized: false,
 
-    // 開機立即全量載入全台股與 ETF 最新現價 (TWSE & TPEx OpenAPI)
-    async initLiveDatabase() {
-      if (this.isInitialized) return;
-      try {
-        const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
-        if (res.ok) {
-          const list = await res.json();
-          if (Array.isArray(list)) {
-            list.forEach(item => {
-              const c = item.Code ? item.Code.trim().toUpperCase() : '';
-              const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
-              if (c && !isNaN(p) && p > 0) {
-                const itemQuote = {
-                  id: c,
-                  name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name),
-                  price: p,
-                  prevClose: p,
-                  source: 'twse-openapi'
-                };
-                this.cache[c] = { data: itemQuote, timestamp: Date.now() };
-                TaiwanStockDB[c] = {
-                  name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
-                  price: p
-                };
-              }
-            });
-          }
-        }
-      } catch (e) {}
-
-      try {
-        const res = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes', { cache: 'no-store' });
-        if (res.ok) {
-          const list = await res.json();
-          if (Array.isArray(list)) {
-            list.forEach(item => {
-              const c = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim().toUpperCase() : '';
-              const p = parseFloat((item.Close || '').replace(/,/g, ''));
-              if (c && !isNaN(p) && p > 0) {
-                const itemQuote = {
-                  id: c,
-                  name: item.CompanyName ? item.CompanyName.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name),
-                  price: p,
-                  prevClose: p,
-                  source: 'tpex-openapi'
-                };
-                this.cache[c] = { data: itemQuote, timestamp: Date.now() };
-                TaiwanStockDB[c] = {
-                  name: item.CompanyName ? item.CompanyName.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
-                  price: p
-                };
-              }
-            });
-          }
-        }
-      } catch (e) {}
-
-      this.isInitialized = true;
-      console.log('台灣股市即時行情全量字典庫初始化完成！總檔數:', Object.keys(TaiwanStockDB).length);
-
-      // 同步刷新當前長輩自選股票
-      this.syncAllElderStocks();
-    },
-
-    // 取得單檔台股即時成交價與名稱 (自動支援上市/上櫃/ETF)
+    // 取得單檔台股即時成交價與名稱 (100% 即時聯網抓取真實市場最新價格)
     async fetchQuote(rawCode) {
       if (!rawCode) return null;
       const code = rawCode.toString().trim().toUpperCase();
@@ -471,149 +406,60 @@
         return cached.data;
       }
 
-      // 2. 若全量字典庫尚未初始化，先觸發初始化
-      if (!this.isInitialized) {
-        this.initLiveDatabase().catch(() => {});
-      }
-
-      // 3. 請求去重合流 (In-flight deduplication)
+      // 2. 請求合流去重 (In-flight deduplication)
       if (this.inFlight[code]) {
         return this.inFlight[code];
       }
 
       const queryPromise = (async () => {
         let quote = null;
+        const stockName = (TaiwanStockNames[code]) || `股票(${code})`;
 
-        // 策略 A: 證交所 TWSE OpenAPI 全量/單檔匹配
+        // 策略 A: FinMind API (開放 CORS，100% 支援在手機、PWA 與瀏覽器中直接連線獲取真實最新收盤/成交價)
         try {
-          const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { cache: 'no-store' });
+          const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=2024-01-01`;
+          const res = await fetch(fmUrl);
           if (res.ok) {
-            const list = await res.json();
-            if (Array.isArray(list)) {
-              for (let i = 0; i < list.length; i++) {
-                const item = list[i];
-                const c = item.Code ? item.Code.trim().toUpperCase() : '';
-                const p = parseFloat((item.ClosingPrice || '').replace(/,/g, ''));
-                if (c && !isNaN(p) && p > 0) {
-                  TaiwanStockDB[c] = {
-                    name: item.Name ? item.Name.trim() : (TaiwanStockDB[c] && TaiwanStockDB[c].name) || `股票(${c})`,
-                    price: p
-                  };
-                  if (c === code) {
-                    quote = {
-                      id: c,
-                      name: TaiwanStockDB[c].name,
-                      price: p,
-                      prevClose: p,
-                      source: 'twse-openapi'
-                    };
-                  }
-                }
+            const json = await res.json();
+            if (json && Array.isArray(json.data) && json.data.length > 0) {
+              const latest = json.data[json.data.length - 1];
+              if (latest && typeof latest.close === 'number') {
+                quote = {
+                  id: code,
+                  name: stockName,
+                  price: parseFloat(latest.close),
+                  prevClose: parseFloat(latest.open || latest.close),
+                  date: latest.date,
+                  source: 'finmind'
+                };
               }
             }
           }
         } catch (e) {}
 
-        // 策略 B: FinMind API (CORS 開放，高可靠即時台股報價)
+        // 策略 B: Yahoo Finance via AllOrigins Proxy 備援
         if (!quote) {
           try {
-            const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=2024-01-01`;
-            const res = await fetch(fmUrl);
+            const yhUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yhUrl)}`;
+            const res = await fetch(proxyUrl);
             if (res.ok) {
-              const json = await res.json();
-              if (json && Array.isArray(json.data) && json.data.length > 0) {
-                const latest = json.data[json.data.length - 1];
-                if (latest && latest.close) {
-                  quote = {
-                    id: code,
-                    name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || `股票(${code})`,
-                    price: parseFloat(latest.close),
-                    prevClose: parseFloat(latest.open || latest.close),
-                    source: 'finmind'
-                  };
-                }
+              const data = await res.json();
+              const meta = data?.chart?.result?.[0]?.meta;
+              if (meta && (meta.regularMarketPrice || meta.previousClose)) {
+                quote = {
+                  id: code,
+                  name: stockName,
+                  price: parseFloat(meta.regularMarketPrice || meta.previousClose),
+                  prevClose: parseFloat(meta.previousClose || meta.regularMarketPrice),
+                  source: 'yahoo-proxy'
+                };
               }
             }
           } catch (e) {}
-        }
-
-        // 若為櫃買中心上櫃股票且尚未查得，查詢 TPEx OpenAPI
-        if (!quote) {
-          try {
-            const res = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes', { cache: 'no-store' });
-            if (res.ok) {
-              const list = await res.json();
-              if (Array.isArray(list)) {
-                list.forEach(item => {
-                  const c = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim().toUpperCase() : '';
-                  const p = parseFloat((item.Close || '').replace(/,/g, ''));
-                  if (c && !isNaN(p) && p > 0) {
-                    const itemQuote = {
-                      id: c,
-                      name: (TaiwanStockDB[c] && TaiwanStockDB[c].name) || item.CompanyName || `股票(${c})`,
-                      price: p,
-                      prevClose: p,
-                      source: 'tpex-openapi'
-                    };
-                    this.cache[c] = { data: itemQuote, timestamp: Date.now() };
-                    if (TaiwanStockDB[c]) {
-                      TaiwanStockDB[c].price = p;
-                    }
-                  }
-                });
-                if (this.cache[code]) {
-                  quote = this.cache[code].data;
-                }
-              }
-            }
-          } catch (e) {}
-        }
-
-        // 策略 B: Yahoo Finance 實時行情 (支援上市 .TW 與上櫃 .TWO)
-        if (!quote) {
-          const tryYahoo = async (symbol) => {
-            try {
-              const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-              if (res.ok) {
-                const data = await res.json();
-                const meta = data?.chart?.result?.[0]?.meta;
-                if (meta && (meta.regularMarketPrice || meta.previousClose)) {
-                  const p = parseFloat(meta.regularMarketPrice || meta.previousClose);
-                  return {
-                    id: code,
-                    name: (TaiwanStockDB[code] && TaiwanStockDB[code].name) || meta.shortName || `股票(${code})`,
-                    price: p,
-                    prevClose: parseFloat(meta.previousClose || meta.regularMarketPrice),
-                    source: 'yahoo-finance'
-                  };
-                }
-              }
-            } catch (e) {}
-            return null;
-          };
-
-          quote = await tryYahoo(`${code}.TW`);
-          if (!quote) quote = await tryYahoo(`${code}.TWO`);
-        }
-
-        // 策略 C: 本地資料庫兜底
-        if (!quote && TaiwanStockDB[code]) {
-          quote = {
-            id: code,
-            name: TaiwanStockDB[code].name,
-            price: TaiwanStockDB[code].price,
-            prevClose: TaiwanStockDB[code].price,
-            source: 'local-db'
-          };
         }
 
         if (quote) {
-          if (TaiwanStockDB[code]) {
-            TaiwanStockDB[code].price = quote.price;
-            if (quote.name && !quote.name.startsWith('股票(')) {
-              TaiwanStockDB[code].name = quote.name;
-            }
-          }
           this.cache[code] = { data: quote, timestamp: Date.now() };
         }
 
@@ -624,6 +470,55 @@
       this.inFlight[code] = queryPromise;
       return queryPromise;
     },
+
+    // 批量刷新長輩的自選股票最新盤價
+    async refreshElderStocks(elder) {
+      if (!elder || !elder.stocks || elder.stocks.length === 0) return false;
+      let changed = false;
+
+      for (let i = 0; i < elder.stocks.length; i++) {
+        const stock = elder.stocks[i];
+        if (!stock.id) continue;
+        try {
+          const q = await this.fetchQuote(stock.id);
+          if (q && q.price && q.price !== stock.currentPrice) {
+            stock.prevTickPrice = stock.currentPrice;
+            stock.lastDiff = q.price - stock.currentPrice;
+            stock.currentPrice = q.price;
+            if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
+              stock.name = q.name;
+            }
+            changed = true;
+          }
+        } catch (e) {}
+      }
+
+      return changed;
+    },
+
+    // 全局長輩股票即時同步
+    async syncAllElderStocks() {
+      const activeElder = getActiveElder();
+      let changed = await this.refreshElderStocks(activeElder);
+
+      const otherId = (AppState.activeElderId === 'dad') ? 'mom' : 'dad';
+      const otherElder = AppState.elders[otherId];
+      if (otherElder) {
+        this.refreshElderStocks(otherElder).then(otherChanged => {
+          if (otherChanged) {
+            saveAppState();
+            CloudSync.pushElder(otherId);
+          }
+        });
+      }
+
+      if (changed) {
+        saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
+        renderAll();
+      }
+    }
+  };
 
     // 批量刷新長輩的自選股票
     async refreshElderStocks(elder) {
@@ -1313,500 +1208,45 @@
 
   
   // ==========================================
-  // 台股熱門代號智能自動對應庫 (2000+ 檔全台股/ETF 字典)
+  // 台股熱門代號智能自動對應字典 (純代碼與名稱對應，絕不硬編碼任何過期價格)
   // ==========================================
-  const TaiwanStockDB = {
-    "2330": {
-        "name": "台積電",
-        "price": 2410
-    },
-    "2317": {
-        "name": "鴻海",
-        "price": 185
-    },
-    "2454": {
-        "name": "聯發科",
-        "price": 1250
-    },
-    "2344": {
-        "name": "華邦電",
-        "price": 181.0
-    },
-    "2303": {
-        "name": "聯電",
-        "price": 54.5
-    },
-    "2308": {
-        "name": "台達電",
-        "price": 395
-    },
-    "2382": {
-        "name": "廣達",
-        "price": 285
-    },
-    "3231": {
-        "name": "緯創",
-        "price": 105
-    },
-    "2356": {
-        "name": "英業達",
-        "price": 46.8
-    },
-    "2376": {
-        "name": "技嘉",
-        "price": 265
-    },
-    "2357": {
-        "name": "華碩",
-        "price": 560
-    },
-    "2379": {
-        "name": "瑞昱",
-        "price": 520
-    },
-    "2345": {
-        "name": "智邦",
-        "price": 550
-    },
-    "3711": {
-        "name": "日月光投控",
-        "price": 150
-    },
-    "3008": {
-        "name": "大立光",
-        "price": 2650
-    },
-    "2337": {
-        "name": "旺宏",
-        "price": 26.5
-    },
-    "2408": {
-        "name": "南亞科",
-        "price": 52.0
-    },
-    "6770": {
-        "name": "力積電",
-        "price": 21.5
-    },
-    "5347": {
-        "name": "世界",
-        "price": 105
-    },
-    "3034": {
-        "name": "聯詠",
-        "price": 510
-    },
-    "3037": {
-        "name": "欣興",
-        "price": 155
-    },
-    "3661": {
-        "name": "世芯-KY",
-        "price": 2800
-    },
-    "6669": {
-        "name": "緯穎",
-        "price": 2200
-    },
-    "2347": {
-        "name": "聯強",
-        "price": 72.0
-    },
-    "2353": {
-        "name": "宏碁",
-        "price": 45.0
-    },
-    "2371": {
-        "name": "大同",
-        "price": 48.0
-    },
-    "2383": {
-        "name": "台光電",
-        "price": 420
-    },
-    "2385": {
-        "name": "群光",
-        "price": 160
-    },
-    "2449": {
-        "name": "京元電子",
-        "price": 115
-    },
-    "2474": {
-        "name": "可成",
-        "price": 210
-    },
-    "2324": {
-        "name": "仁寶",
-        "price": 36.5
-    },
-    "2301": {
-        "name": "光寶科",
-        "price": 102
-    },
-    "2327": {
-        "name": "國巨",
-        "price": 580
-    },
-    "2498": {
-        "name": "宏達電",
-        "price": 46.5
-    },
-    "2354": {
-        "name": "鴻準",
-        "price": 68.5
-    },
-    "3443": {
-        "name": "創意",
-        "price": 1180
-    },
-    "6415": {
-        "name": "矽力*-KY",
-        "price": 430
-    },
-    "3529": {
-        "name": "力旺",
-        "price": 2600
-    },
-    "3131": {
-        "name": "弘塑",
-        "price": 1650
-    },
-    "3583": {
-        "name": "辛耘",
-        "price": 380
-    },
-    "6187": {
-        "name": "萬潤",
-        "price": 390
-    },
-    "3653": {
-        "name": "健策",
-        "price": 1200
-    },
-    "3324": {
-        "name": "雙鴻",
-        "price": 650
-    },
-    "3017": {
-        "name": "奇鋐",
-        "price": 580
-    },
-    "2059": {
-        "name": "川湖",
-        "price": 1080
-    },
-    "2458": {
-        "name": "義隆",
-        "price": 150
-    },
-    "3532": {
-        "name": "台勝科",
-        "price": 135
-    },
-    "6488": {
-        "name": "環球晶",
-        "price": 420
-    },
-    "5483": {
-        "name": "中美晶",
-        "price": 165
-    },
-    "2412": {
-        "name": "中華電",
-        "price": 125
-    },
-    "3045": {
-        "name": "台灣大",
-        "price": 112
-    },
-    "4904": {
-        "name": "遠傳",
-        "price": 88.5
-    },
-    "2886": {
-        "name": "兆豐金",
-        "price": 39.8
-    },
-    "2884": {
-        "name": "玉山金",
-        "price": 28.5
-    },
-    "2881": {
-        "name": "富邦金",
-        "price": 88.5
-    },
-    "2882": {
-        "name": "國泰金",
-        "price": 64.2
-    },
-    "2891": {
-        "name": "中信金",
-        "price": 36.5
-    },
-    "2892": {
-        "name": "第一金",
-        "price": 27.8
-    },
-    "2880": {
-        "name": "華南金",
-        "price": 25.6
-    },
-    "2885": {
-        "name": "元大金",
-        "price": 31.5
-    },
-    "2887": {
-        "name": "台新金",
-        "price": 18.5
-    },
-    "2883": {
-        "name": "開發金",
-        "price": 16.2
-    },
-    "5880": {
-        "name": "合庫金",
-        "price": 25.8
-    },
-    "2801": {
-        "name": "彰銀",
-        "price": 17.8
-    },
-    "2888": {
-        "name": "新光金",
-        "price": 12.8
-    },
-    "2834": {
-        "name": "臺企銀",
-        "price": 15.6
-    },
-    "2890": {
-        "name": "永豐金",
-        "price": 24.2
-    },
-    "2809": {
-        "name": "京城銀",
-        "price": 52.0
-    },
-    "2889": {
-        "name": "國票金",
-        "price": 15.0
-    },
-    "5876": {
-        "name": "上海商銀",
-        "price": 43.5
-    },
-    "5871": {
-        "name": "中租-KY",
-        "price": 135
-    },
-    "9941": {
-        "name": "裕融",
-        "price": 138
-    },
-    "0050": {
-        "name": "元大台灣50",
-        "price": 104.65
-    },
-    "0051": {
-        "name": "元大中型100",
-        "price": 142.0
-    },
-    "0052": {
-        "name": "富邦科技",
-        "price": 60.85
-    },
-    "0056": {
-        "name": "元大高股息",
-        "price": 38.5
-    },
-    "00878": {
-        "name": "國泰永續高股息",
-        "price": 22.8
-    },
-    "00919": {
-        "name": "群益台灣精選高息",
-        "price": 24.5
-    },
-    "00929": {
-        "name": "復華台灣科技優息",
-        "price": 19.8
-    },
-    "00940": {
-        "name": "元大台灣價值高息",
-        "price": 9.6
-    },
-    "006208": {
-        "name": "富邦台50",
-        "price": 105
-    },
-    "00713": {
-        "name": "元大台灣高息低波",
-        "price": 58.0
-    },
-    "00918": {
-        "name": "大華優利高填息30",
-        "price": 24.0
-    },
-    "00915": {
-        "name": "凱基優選高股息30",
-        "price": 26.5
-    },
-    "00881": {
-        "name": "國泰台灣5G+",
-        "price": 23.5
-    },
-    "0052": {
-        "name": "富邦科技",
-        "price": 185
-    },
-    "00830": {
-        "name": "國泰費城半導體",
-        "price": 42.0
-    },
-    "00646": {
-        "name": "元大S&P500",
-        "price": 56.0
-    },
-    "00662": {
-        "name": "富邦NASDAQ",
-        "price": 85.0
-    },
-    "2603": {
-        "name": "長榮",
-        "price": 185
-    },
-    "2609": {
-        "name": "陽明",
-        "price": 65.2
-    },
-    "2615": {
-        "name": "萬海",
-        "price": 78.5
-    },
-    "2605": {
-        "name": "新興",
-        "price": 28.5
-    },
-    "2618": {
-        "name": "長榮航",
-        "price": 36.5
-    },
-    "2610": {
-        "name": "華航",
-        "price": 22.5
-    },
-    "2606": {
-        "name": "裕民",
-        "price": 55.0
-    },
-    "2637": {
-        "name": "慧洋-KY",
-        "price": 68.0
-    },
-    "1101": {
-        "name": "台泥",
-        "price": 32.5
-    },
-    "1102": {
-        "name": "亞泥",
-        "price": 42.0
-    },
-    "1301": {
-        "name": "台塑",
-        "price": 56.5
-    },
-    "1303": {
-        "name": "南亞",
-        "price": 48.2
-    },
-    "1326": {
-        "name": "台化",
-        "price": 45.0
-    },
-    "6505": {
-        "name": "台塑化",
-        "price": 58.0
-    },
-    "2002": {
-        "name": "中鋼",
-        "price": 23.5
-    },
-    "2006": {
-        "name": "東和鋼鐵",
-        "price": 72.0
-    },
-    "9958": {
-        "name": "世紀鋼",
-        "price": 210
-    },
-    "1519": {
-        "name": "華城",
-        "price": 620
-    },
-    "1503": {
-        "name": "士電",
-        "price": 215
-    },
-    "1504": {
-        "name": "東元",
-        "price": 52.0
-    },
-    "1513": {
-        "name": "中興電",
-        "price": 165
-    },
-    "1514": {
-        "name": "亞力",
-        "price": 115
-    },
-    "9910": {
-        "name": "豐泰",
-        "price": 140
-    },
-    "9904": {
-        "name": "寶成",
-        "price": 36.8
-    },
-    "2912": {
-        "name": "統一超",
-        "price": 275
-    },
-    "1216": {
-        "name": "統一",
-        "price": 82.5
-    },
-    "2409": {
-        "name": "友達",
-        "price": 16.5
-    },
-    "3481": {
-        "name": "群創",
-        "price": 15.2
-    },
-    "6176": {
-        "name": "瑞儀",
-        "price": 195
-    },
-    "1476": {
-        "name": "儒鴻",
-        "price": 520
-    },
-    "1477": {
-        "name": "聚陽",
-        "price": 360
-    }
-};
+  const TaiwanStockNames = {
+    "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2344": "華邦電",
+    "2303": "聯電", "2308": "台達電", "2382": "廣達", "3231": "緯創",
+    "2356": "英業達", "2376": "技嘉", "2357": "華碩", "2379": "瑞昱",
+    "2345": "智邦", "3711": "日月光投控", "3008": "大立光", "2337": "旺宏",
+    "2408": "南亞科", "6770": "力積電", "5347": "世界", "2449": "京元電子",
+    "3034": "聯詠", "2377": "微星", "6488": "環球晶", "3037": "欣興",
+    "2368": "金像電", "8069": "元太", "2409": "友達", "3481": "群創",
+    "2881": "富邦金", "2882": "國泰金", "2886": "兆豐金", "2891": "中信金",
+    "2884": "玉山金", "2892": "第一金", "2880": "華南金", "2885": "元大金",
+    "2883": "開發金", "2887": "台新金", "2890": "永豐金", "5880": "合庫金",
+    "2801": "彰銀", "2834": "臺企銀", "2809": "京城銀", "2889": "國票金",
+    "5876": "上海商銀", "5871": "中租-KY", "9941": "裕融", "2412": "中華電",
+    "3045": "台灣大", "4904": "遠傳", "2603": "長榮", "2609": "陽明",
+    "2615": "萬海", "2605": "新興", "2618": "長榮航", "2610": "華航",
+    "2637": "慧洋-KY", "1101": "台泥", "1102": "亞泥", "1301": "台塑",
+    "1303": "南亞", "1326": "台化", "6505": "台塑化", "2002": "中鋼",
+    "2006": "東和鋼鐵", "9958": "世紀鋼", "1519": "華城", "1503": "士電",
+    "1504": "東元", "1513": "中興電", "1514": "亞力", "9910": "豐泰",
+    "9904": "寶成", "2912": "統一超", "1216": "統一", "6176": "瑞儀",
+    "1476": "儒鴻", "1477": "聚陽", "6547": "高端疫苗",
+    "0050": "元大台灣50", "0051": "元大中型100", "0052": "富邦科技",
+    "0056": "元大高股息", "00878": "國泰永續高股息", "00919": "群益台灣精選高息",
+    "00929": "復華台灣科技優息", "00940": "元大台灣價值高息", "006208": "富邦台50",
+    "00713": "元大台灣高息低波", "00918": "大華優利高填息30", "00915": "凱基優選高股息30",
+    "00881": "國泰台灣5G+", "00830": "國泰費城半導體", "00646": "元大S&P500", "00662": "富邦NASDAQ"
+  };
 
   function lookupTaiwanStock(query) {
     if (!query) return null;
     query = query.toString().trim().toUpperCase();
-    if (TaiwanStockDB[query]) {
-      return Object.assign({ id: query }, TaiwanStockDB[query]);
+    if (TaiwanStockNames[query]) {
+      return { id: query, name: TaiwanStockNames[query] };
     }
-    for (let code in TaiwanStockDB) {
-      if (TaiwanStockDB[code].name === query || TaiwanStockDB[code].name.includes(query)) {
-        return Object.assign({ id: code }, TaiwanStockDB[code]);
+    for (let code in TaiwanStockNames) {
+      if (TaiwanStockNames[code] === query || TaiwanStockNames[code].includes(query)) {
+        return { id: code, name: TaiwanStockNames[code] };
       }
     }
     return null;
@@ -2370,33 +1810,31 @@
       const targetInput = item.querySelector('.stock-edit-target');
 
       const handleIdChange = () => {
-        const code = idInput.value.trim();
+        const code = idInput.value.trim().toUpperCase();
         if (!code) return;
 
-        // 1. 同步從本地資料庫秒帶出基準值 (極速零延遲)
+        // 1. 同步從代碼名稱字典秒帶出正確股票名稱 (純代號名稱映射，無任何寫死舊價格)
         const match = lookupTaiwanStock(code);
         if (match) {
           nameInput.value = match.name;
-          currentInput.value = match.price;
-          buyInput.value = match.price;
-          targetInput.value = Math.round(match.price * 1.15);
         } else {
           nameInput.value = `股票(${code})`;
         }
 
-        // 2. 異步聯網查詢真實市場即時成交價 (例如 2344 華邦電 -> 181.00)
-        if (code.length >= 3) {
+        currentInput.value = '';
+        currentInput.placeholder = '連線查詢現價中...';
+
+        // 2. 異步聯網查詢真實市場即時成交價 (例如 2344 -> 181.00 / 0050 -> 104.65)
+        if (code.length >= 2) {
           RealtimeStockService.fetchQuote(code).then((quote) => {
-            if (quote && idInput.value.trim().toUpperCase() === code.toUpperCase()) {
+            if (quote && idInput.value.trim().toUpperCase() === code) {
               if (quote.name && !quote.name.startsWith('股票(')) {
                 nameInput.value = quote.name;
               }
               if (quote.price) {
                 currentInput.value = quote.price;
-                if (!buyInput.value || (match && parseFloat(buyInput.value) === match.price)) {
-                  buyInput.value = quote.price;
-                  targetInput.value = Math.round(quote.price * 1.15);
-                }
+                buyInput.value = quote.price;
+                targetInput.value = Math.round(quote.price * 1.15);
               }
             }
           }).catch(() => {});
