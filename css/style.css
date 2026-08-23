@@ -151,12 +151,12 @@ body {
   overflow-x: hidden;
 }
 
-/* 頂部極簡導覽區 */
+/* 頂部極簡導覽區 (高度緊湊化) */
 .app-header {
   background: rgba(21, 34, 67, 0.96);
   backdrop-filter: blur(10px);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 14px;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -173,14 +173,14 @@ body {
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .header-mini-avatar {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   border-radius: 50%;
   border: 2px solid #F59E0B;
   object-fit: cover;
@@ -188,22 +188,22 @@ body {
 }
 
 .header-brand-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
   color: #FFFFFF;
   letter-spacing: 0.5px;
 }
 
 .btn-settings-gear {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  min-height: 38px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   background: rgba(255, 255, 255, 0.08);
-  border: 2px solid #475569;
+  border: 1px solid #475569;
   color: #CBD5E1;
-  font-size: 22px;
-  border-radius: 10px;
+  font-size: 20px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -213,15 +213,21 @@ body {
 }
 
 .btn-settings-gear:active {
-  transform: scale(0.94);
+  transform: scale(0.92);
   background: rgba(255, 255, 255, 0.18);
 }
 
+.main-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 10px 10px 10px;
+}
+
 /* ========================================== */
-/* 單一股票一屏全景看板與頁籤樣式 */
+/* 單一股票一屏全景看板與頁籤樣式 (緊湊不需滑動) */
 /* ========================================== */
 .stock-tabs-wrapper {
-  margin: 10px 0 14px 0;
+  margin: 6px 0 8px 0;
   width: 100%;
   box-sizing: border-box;
   display: block !important;
@@ -237,14 +243,14 @@ body {
 .stock-tab-btn {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 52px;
+  min-height: 42px;
   background: #152243;
-  border: 3px solid rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.16);
   color: #94A3B8;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  padding: 10px 4px;
-  border-radius: 14px;
+  padding: 6px 4px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -257,9 +263,9 @@ body {
 
 .stock-tab-btn.active {
   background: linear-gradient(135deg, #1E3A8A, #2563EB);
-  border: 3px solid #38BDF8;
+  border: 2px solid #38BDF8;
   color: #FFFFFF;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
   font-weight: 900;
 }
 
@@ -267,23 +273,23 @@ body {
   transform: scale(0.96);
 }
 
-/* 單一股票卡片本體 */
+/* 單一股票卡片本體 (緊湊全景) */
 .single-stock-card {
   background: linear-gradient(160deg, #152243 0%, #0F172A 100%);
-  border: 3px solid rgba(56, 189, 248, 0.4);
-  border-radius: var(--radius-lg);
-  padding: 18px 22px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(56, 189, 248, 0.4);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 .stock-view-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 6px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   white-space: nowrap;
 }
@@ -293,7 +299,7 @@ body {
 }
 
 .row-label {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 800;
   color: #94A3B8;
   white-space: nowrap;
@@ -301,7 +307,7 @@ body {
 }
 
 .row-val {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 900;
   color: #F8FAFC;
   text-align: right;
@@ -310,68 +316,68 @@ body {
 }
 
 .val-bold {
-  font-size: 26px;
+  font-size: 22px;
   color: #FFFFFF;
 }
 
-/* 特殊行大字體加強 */
+/* 特殊行 */
 .stock-view-name-row {
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .val-stock-name {
-  font-size: 34px;
+  font-size: 26px;
   color: #FEF08A;
-  text-shadow: 0 0 10px rgba(254, 240, 138, 0.3);
+  text-shadow: 0 0 8px rgba(254, 240, 138, 0.3);
 }
 
 .stock-view-price-row {
   background: rgba(255, 255, 255, 0.04);
-  margin: 4px -10px;
-  padding: 14px 10px;
-  border-radius: var(--radius-md);
+  margin: 2px -6px;
+  padding: 4px 6px;
+  border-radius: 8px;
   border-bottom: none;
 }
 
 .val-current-price {
-  font-size: 46px;
+  font-size: 34px;
   color: #FFFFFF;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 /* 台灣股市標準配色：紅賺/漲、綠賠/跌 */
 .val-profit-red {
   color: #EF4444 !important;
-  font-size: 34px;
+  font-size: 22px !important;
   font-weight: 900;
-  text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
 }
 
 .val-loss-green {
   color: #10B981 !important;
-  font-size: 34px;
+  font-size: 22px !important;
   font-weight: 900;
-  text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
 }
 
 .val-target-red {
   color: #EF4444 !important;
-  font-size: 32px;
+  font-size: 22px !important;
   font-weight: 900;
 }
 
 .val-target-green {
   color: #10B981 !important;
-  font-size: 32px;
+  font-size: 22px !important;
   font-weight: 900;
 }
 
 /* 看板底部按鈕列 */
 .stock-view-footer {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 8px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -382,16 +388,16 @@ body {
   background: linear-gradient(135deg, #2563EB, #1D4ED8);
   border: 2px solid #60A5FA;
   color: #FFFFFF;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  padding: 12px 6px;
+  padding: 9px 4px;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
   white-space: nowrap;
   box-sizing: border-box;
 }
@@ -406,9 +412,9 @@ body {
   background: linear-gradient(135deg, #065F46, #047857);
   border: 2px solid #34D399;
   color: #FFFFFF;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  padding: 12px 6px;
+  padding: 9px 4px;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
@@ -425,9 +431,9 @@ body {
   background: #334155;
   border: 2px solid #64748B;
   color: #94A3B8;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  padding: 12px 6px;
+  padding: 9px 4px;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
@@ -438,23 +444,23 @@ body {
   box-sizing: border-box;
 }
 
-/* 底部聲明 */
+/* 底部聲明 (超精簡不佔位) */
 .app-footer {
-  margin-top: 22px;
-  padding: 16px 12px 8px 12px;
+  margin-top: 6px;
+  padding: 6px 4px 2px 4px;
   text-align: center;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .footer-design {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: bold;
   color: #94A3B8;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .footer-notice {
-  font-size: 14px;
+  font-size: 11px;
   color: #64748B;
 }
 

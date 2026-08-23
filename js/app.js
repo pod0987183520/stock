@@ -936,6 +936,30 @@
     }
   }
 
+  
+  // 長輩超白話金額格式化 (例: 139,000 -> 13萬9千元 / 150,000 -> 15萬元)
+  function formatSeniorMoneyText(num) {
+    num = Math.abs(Math.round(num));
+    if (num >= 10000) {
+      const wan = Math.floor(num / 10000);
+      const rem = num % 10000;
+      const qian = Math.floor(rem / 1000);
+      const bai = Math.floor((rem % 1000) / 100);
+      let str = `${wan}萬`;
+      if (qian > 0) str += `${qian}千`;
+      if (bai > 0) str += `${bai}百`;
+      return str + '元';
+    } else if (num >= 1000) {
+      const qian = Math.floor(num / 1000);
+      const bai = Math.floor((num % 1000) / 100);
+      let str = `${qian}千`;
+      if (bai > 0) str += `${bai}百`;
+      return str + '元';
+    } else {
+      return `${num}元`;
+    }
+  }
+
   // 渲染單一股票一屏看板與大頁籤
   function renderSingleStockView() {
     const elder = getActiveElder();
@@ -1003,10 +1027,10 @@
     if (currentProfitEl) {
       if (isProfit) {
         currentProfitEl.className = 'row-val val-profit-red';
-        currentProfitEl.textContent = `▲ 賺 $${profitDiff.toLocaleString()} 元`;
+        currentProfitEl.textContent = `▲ 賺 ${formatSeniorMoneyText(profitDiff)}`;
       } else {
         currentProfitEl.className = 'row-val val-loss-green';
-        currentProfitEl.textContent = `▼ 賠 $${Math.abs(profitDiff).toLocaleString()} 元`;
+        currentProfitEl.textContent = `▼ 賠 ${formatSeniorMoneyText(profitDiff)}`;
       }
     }
 
@@ -1020,10 +1044,10 @@
       const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
       if (isTargetProfit) {
         targetProfitEl.className = 'row-val val-target-red';
-        targetProfitEl.textContent = `▲ 賺 $${targetDiff.toLocaleString()} 元`;
+        targetProfitEl.textContent = `▲ 賺 ${formatSeniorMoneyText(targetDiff)}`;
       } else {
         targetProfitEl.className = 'row-val val-target-green';
-        targetProfitEl.textContent = `▼ 賠 $${Math.abs(targetDiff).toLocaleString()} 元`;
+        targetProfitEl.textContent = `▼ 賠 ${formatSeniorMoneyText(targetDiff)}`;
       }
     }
   }
@@ -1563,13 +1587,7 @@
       };
     }
 
-    // 聽當前股票說話按鈕
-    const btnSpeakStock = document.getElementById('btn-speak-current-stock');
-    if (btnSpeakStock) {
-      btnSpeakStock.onclick = () => {
-        speakCurrentStockBrief();
-      };
-    }
+    
 
     // 啟動每 5 分鐘健腦操浮動彈窗
     StockSummaryModalManager.init();
@@ -1604,6 +1622,7 @@
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (let r of regs) r.unregister();
       });
-    });
+    }
+  });
 
 })();
