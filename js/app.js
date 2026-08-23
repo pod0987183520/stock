@@ -7,6 +7,27 @@
   'use strict';
 
   // ==========================================
+  // 0. LINE 內嵌瀏覽器逃脫與環境判定
+  // ==========================================
+  const ua = (navigator.userAgent || '').toLowerCase();
+  const isLine = ua.includes('line');
+  const isIOS = /ipad|iphone|ipod/.test(ua) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  if (isLine) {
+    // 若尚未帶有跳出外部瀏覽器參數，立即自動重定向
+    if (!window.location.search.includes('openExternalBrowser=1')) {
+      window.location.href += (window.location.href.includes('?') ? '&' : '?') + 'openExternalBrowser=1';
+      return;
+    }
+    // 若已帶參數但仍停留在 LINE 內，待 DOM 載入後彈出防呆圖文教學
+    window.addEventListener('DOMContentLoaded', () => {
+      const lineModal = document.getElementById('lineGuideModal');
+      if (lineModal) lineModal.classList.remove('hidden');
+    });
+  }
+
+  // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
   const STORAGE_KEY = 'xiaogu_stocks_app_data_v5';
@@ -1874,33 +1895,38 @@
 
   
   // ==========================================
-  // 全域 PWA 一鍵安裝函式
+  // 全域 PWA 一鍵安裝函式 (頂端列「安裝App」專用)
   // ==========================================
   window.triggerPWAInstall = function triggerPWAInstall() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const currentUA = (navigator.userAgent || '').toLowerCase();
+    const isIOSDevice = /ipad|iphone|ipod/.test(currentUA) && !window.MSStream;
 
+    // 1. 若瀏覽器已捕獲原生 PWA 安裝事件 (Android / Chrome / Edge / PC)
     if (window.deferredPrompt) {
       window.deferredPrompt.prompt();
       window.deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
           const btnHeader = document.getElementById('btn-header-install');
-          if (btnHeader) btnHeader.style.display = 'none';
+          if (btnHeader) btnHeader.classList.add('hidden');
         }
         window.deferredPrompt = null;
       });
       return;
     }
 
-    if (isIOS) {
+    // 2. 若為 iOS 裝置 (Safari 分享選單引導)
+    if (isIOSDevice) {
       const iosModal = document.getElementById('iosInstallModal');
       if (iosModal) iosModal.classList.remove('hidden');
+      return;
+    }
+
+    // 3. 其他情況或尚未觸發原生事件時的備援引導
+    const androidModal = document.getElementById('androidInstallGuideModal');
+    if (androidModal) {
+      androidModal.classList.remove('hidden');
     } else {
-      const androidModal = document.getElementById('androidInstallGuideModal');
-      if (androidModal) {
-        androidModal.classList.remove('hidden');
-      } else {
-        alert('📲 請點擊瀏覽器右上角「⋮」➜ 選擇「安裝應用程式」或「加到主畫面」即可安裝到桌面！');
-      }
+      alert('📲 請點擊瀏覽器右上角「⋮」➜ 選擇「安裝應用程式」或「加到主畫面」即可安裝到桌面！');
     }
   };
 
@@ -2149,26 +2175,36 @@
       };
     }
 
-    // 捕捉 PWA beforeinstallprompt 事件
+    // ==========================================
+    // PWA 事件監聽與按鈕顯示邏輯
+    // ==========================================
+    const btnHeader = document.getElementById('btn-header-install');
+
+    // 只要不是已經安裝的獨立 App 模式 (Standalone)，且處於 iOS，就直接顯示頂端列安裝按鈕
+    if (!isStandalone && isIOS) {
+      if (btnHeader) btnHeader.classList.remove('hidden');
+    }
+
+    // 捕捉 Android / Chrome / Edge 的 beforeinstallprompt 事件
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       window.deferredPrompt = e;
-      const btnHeader = document.getElementById('btn-header-install');
-      if (btnHeader) btnHeader.style.display = 'inline-flex';
-      const androidBanner = document.getElementById('androidInstallBanner');
-      if (androidBanner) androidBanner.classList.remove('hidden');
+      if (btnHeader && !isStandalone) {
+        btnHeader.classList.remove('hidden');
+      }
     });
 
+    // 監聽安裝完成廣播
     window.addEventListener('appinstalled', () => {
-      const btnHeader = document.getElementById('btn-header-install');
-      if (btnHeader) btnHeader.style.display = 'none';
+      if (btnHeader) btnHeader.classList.add('hidden');
       window.deferredPrompt = null;
+      console.log('小股同學 PWA 安裝成功！');
     });
 
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.29')
-        .then((reg) => console.log('Service Worker 註冊成功:', reg.scope))
+      navigator.serviceWorker.register('sw.js?v=1.30')
+        .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }
   });

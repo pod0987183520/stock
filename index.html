@@ -17,25 +17,23 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.29">
-  
+  <link rel="stylesheet" href="css/style.css?v=1.30">
 </head>
 <body class="theme-senior">
 
-  <!-- Android / 瀏覽器安裝提示橫幅 -->
-  <div id="androidInstallBanner" class="install-banner hidden">
-    <div class="banner-text">
-      <strong>📲 將「小股同學」加入桌面</strong>
-      <span>字體超大，不用每次找網址！</span>
+  <!-- LINE 內嵌瀏覽器跳出導引彈窗 (防呆圖文教學) -->
+  <div id="lineGuideModal" class="guide-modal hidden">
+    <div class="line-title">⚠️ 請在瀏覽器中開啟</div>
+    <div class="line-steps">
+      為了確保操作順暢與資料保存：<br><br>
+      1. 請點擊右上角的 <strong style="color:#EF4444;">[⋮]</strong> 或 <strong style="color:#EF4444;">[≡]</strong><br>
+      2. 選擇 <strong style="color:#38BDF8;">「以其他應用程式開啟」</strong> 或 <strong style="color:#38BDF8;">「在預設瀏覽器中開啟」</strong>
     </div>
-    <div class="banner-btn-group">
-      <button id="btn-banner-install" class="btn-banner-action">立即安裝</button>
-      <button id="btn-banner-dismiss" class="btn-banner-close">稍後</button>
-    </div>
+    <img src="z_img_line.png" alt="LINE 開啟瀏覽器教學" style="width: 80%; max-width: 320px; margin: 20px auto; border-radius: 12px; display: block; border: 2px solid #38BDF8;">
+    <button id="btn-close-line-guide" class="btn-guide-close" onclick="document.getElementById('lineGuideModal').classList.add('hidden')">關閉提示</button>
   </div>
 
-  
-  <!-- Android 專屬加入主畫面教學彈窗 -->
+  <!-- Android 專屬加入主畫面教學彈窗 (當原生無法直接跳出時的備援) -->
   <div id="androidInstallGuideModal" class="modal-overlay hidden">
     <div class="modal-card ios-modal-content">
       <h3 class="ios-modal-title">🤖 Android 安裝 App 教學</h3>
@@ -62,16 +60,11 @@ AI互動陪伴.給予正向情緒價值">
         <p>2. 往下滑動，點選 <strong>「加入主畫面」 ➕</strong></p>
         <p>3. 點擊右上角 <strong>「新增」</strong> 即可在桌面秒開使用！</p>
       </div>
-      <button id="btn-close-ios-modal" class="btn-primary-senior" style="margin-top: 20px;">我知道了 👍</button>
+      <button id="btn-close-ios-modal" class="btn-primary-senior" style="margin-top: 20px;" onclick="document.getElementById('iosInstallModal').classList.add('hidden')">我知道了 👍</button>
     </div>
   </div>
 
-  <!-- 懸浮「加入主畫面」按鈕 -->
-  <button id="btn-floating-install" class="floating-install-btn hidden">
-    📲 加入主畫面
-  </button>
-
-  <!-- 頂部極簡導覽列 (左側: 小圖+小股同學 / 右側: 齒輪圖形) -->
+  <!-- 頂部極簡導覽列 (左側: 小圖+小股同學 / 右側: 安裝App按鈕 + 齒輪圖形) -->
   <header class="app-header">
     <div class="header-content">
       <div class="header-brand">
@@ -79,9 +72,9 @@ AI互動陪伴.給予正向情緒價值">
         <span class="header-brand-title">小股同學</span>
       </div>
 
-      <!-- 晚輩專用齒輪設定按鈕 (僅齒輪圖形) -->
+      <!-- 頂端列右側按鈕群：僅保留 安裝App 按鈕與齒輪設定 -->
       <div class="header-actions">
-        <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝 App</button>
+        <button id="btn-header-install" class="btn-header-install hidden" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝App</button>
         <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定" onclick="openCaregiverModal()">⚙️</button>
       </div>
     </div>
@@ -467,6 +460,15 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.29"></script>
+  <script src="js/app.js?v=1.30"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js?v=1.30')
+          .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
+          .catch((err) => console.error('ServiceWorker 註冊失敗: ', err));
+      });
+    }
+  </script>
 </body>
 </html>

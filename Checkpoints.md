@@ -8,6 +8,7 @@
 
 | 版本號 | 快照時間 | 類型 | 核心異動與摘要 | Git Tag |
 | :--- | :--- | :--- | :--- | :--- |
+| **v1.30** | 2026-08-23 21:58 | PWA 一鍵安裝與 LINE 逃脫標準化 (Header Install & LINE Escape) | 完整移植《1到50遊戲》標準 PWA 與 LINE 跳脫機制；按鈕純淨收斂至頂端列（命名為「📲 安裝App」，移除底部與橫幅贅字）；開機即時攔截 LINE 內嵌瀏覽器並以 `?openExternalBrowser=1` 自動逃脫至 Chrome/Safari，附帶全螢幕圖文防呆導引；支援 Android 原生 `beforeinstallprompt` 一鍵彈出安裝與 iOS Safari 圖文導引；升級 ServiceWorker 與資源快取至 `v1.30` | `v1.30` |
 | **v1.29** | 2026-08-23 19:40 | 按鈕事件全域直連與防呆 (Direct Global Handlers) | 「📲 安裝 App」與「⚙️ 設定齒輪」全面改採全域直連函式 (window.triggerPWAInstall / window.openCaregiverModal)，並於 HTML 加入原生 onclick 雙重直綁，消除任何環境下的按鈕無響應問題；啟動生命週期加入 try-catch 防呆保護 | `v1.29` |
 | **v1.28** | 2026-08-23 19:35 | PWA 深度整合與後台純淨化 (PWA One-Click & Clean Caregiver) | 徹底修復 Android 原生一鍵安裝事件綁定與 Service Worker 註冊；後台移除雲端同步伺服器選單（背景一律自動採用免註冊公共雲端）；自選股票改為「最多2檔」（持股1、持股2）；股票名稱與目前價格嚴格鎖定唯讀灰底，輸入代號（如 2344）立即自動帶出名稱（華邦電）與現價；移除持股右側贅字提示 | `v1.28` |
 | **v1.27** | 2026-08-23 19:20 | PWA 原生安裝與全台股資料庫 (Standard PWA & Complete DB) | 完全比照「1~50 遊戲」架構啟用標準 Network-First Service Worker，支援 Android 點擊「📲 安裝 App」一鍵直跳系統原生安裝視窗；擴充全台股 100+ 檔熱門上市上櫃與 ETF 即時字典庫；股票名稱與目前價格嚴格鎖定為唯讀灰底（禁止手動輸入），輸入代號（如 2344）立即自動帶出名稱（華邦電）與現價；移除持股右側贅字提示 | `v1.27` |
