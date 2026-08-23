@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=1.28">
+  <link rel="stylesheet" href="css/style.css?v=1.29">
   
 </head>
 <body class="theme-senior">
@@ -81,8 +81,8 @@ AI互動陪伴.給予正向情緒價值">
 
       <!-- 晚輩專用齒輪設定按鈕 (僅齒輪圖形) -->
       <div class="header-actions">
-        <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面">📲 安裝 App</button>
-        <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定">⚙️</button>
+        <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝 App</button>
+        <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定" onclick="openCaregiverModal()">⚙️</button>
       </div>
     </div>
   </header>
@@ -467,6 +467,6 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=1.28"></script>
+  <script src="js/app.js?v=1.29"></script>
 </body>
 </html>

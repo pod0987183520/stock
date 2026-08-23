@@ -1872,6 +1872,38 @@
     }
   };
 
+  
+  // ==========================================
+  // 全域 PWA 一鍵安裝函式
+  // ==========================================
+  window.triggerPWAInstall = function triggerPWAInstall() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
+      window.deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          const btnHeader = document.getElementById('btn-header-install');
+          if (btnHeader) btnHeader.style.display = 'none';
+        }
+        window.deferredPrompt = null;
+      });
+      return;
+    }
+
+    if (isIOS) {
+      const iosModal = document.getElementById('iosInstallModal');
+      if (iosModal) iosModal.classList.remove('hidden');
+    } else {
+      const androidModal = document.getElementById('androidInstallGuideModal');
+      if (androidModal) {
+        androidModal.classList.remove('hidden');
+      } else {
+        alert('📲 請點擊瀏覽器右上角「⋮」➜ 選擇「安裝應用程式」或「加到主畫面」即可安裝到桌面！');
+      }
+    }
+  };
+
   // ==========================================
   // 11. 晚輩設定後台 (Caregiver Modal)
   // ==========================================
@@ -1884,7 +1916,7 @@
     };
   }
 
-  function openCaregiverModal() {
+  window.openCaregiverModal = function openCaregiverModal() {
     const modal = document.getElementById('modal-caregiver');
     if (!modal) return;
 
@@ -2042,47 +2074,9 @@
   // 12. 事件綁定與初始化
   // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
-
-    // 頂端列 📲 安裝 App 智慧辨識與安裝引導
-    const btnHeaderInstall = document.getElementById('btn-header-install');
-    if (btnHeaderInstall) {
-      btnHeaderInstall.onclick = () => {
-        const ua = navigator.userAgent;
-        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-        const isLine = /Line/i.test(ua);
-
-        // 1. 若瀏覽器已準備好原生安裝對話框 (Android Chrome)
-        if (window.deferredPrompt) {
-          window.deferredPrompt.prompt();
-          window.deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              btnHeaderInstall.style.display = 'none';
-            }
-            window.deferredPrompt = null;
-          });
-          return;
-        }
-
-        // 2. iOS Safari 顯示蘋果專屬教學
-        if (isIOS) {
-          const iosModal = document.getElementById('iosInstallModal');
-          if (iosModal) iosModal.classList.remove('hidden');
-          return;
-        }
-
-        // 3. Android / LINE / 其他環境顯示 Android 專屬安裝引導
-        const androidModal = document.getElementById('androidInstallGuideModal');
-        if (androidModal) {
-          androidModal.classList.remove('hidden');
-        } else {
-          alert('📲 請點擊瀏覽器右上角「⋮」➜ 選擇「安裝應用程式」或「加到主畫面」即可安裝到桌面！');
-        }
-      };
-    }
-
-    Speech.init();
-    Recognition.init();
-    CloudSync.initLifecycle();
+    try { Speech.init(); } catch(e) {}
+    try { Recognition.init(); } catch(e) {}
+    try { CloudSync.initLifecycle(); } catch(e) {}
     initTenClickUnlock();
     renderAll();
 
@@ -2096,12 +2090,6 @@
     const tabMom = document.getElementById('tab-elder-mom');
     if (tabDad) tabDad.onclick = () => CaregiverDashboard.switchElder('dad');
     if (tabMom) tabMom.onclick = () => CaregiverDashboard.switchElder('mom');
-
-    // 晚輩端直接打開設定
-    const btnDirectSettings = document.getElementById('btn-open-settings-direct');
-    if (btnDirectSettings) {
-      btnDirectSettings.onclick = () => openCaregiverModal();
-    }
 
     // 晚輩端手動同步按鈕
     const btnManualSync = document.getElementById('btn-manual-sync');
@@ -2120,56 +2108,6 @@
       btnQuickEdit.onclick = () => openCaregiverModal();
     }
 
-    // 晚輩快捷發送孝親紅包
-    const btnCgSendBonus = document.getElementById('btn-cg-send-bonus');
-    if (btnCgSendBonus) {
-      btnCgSendBonus.onclick = () => {
-        const amount = parseInt(document.getElementById('cg-input-bonus-amount').value) || 5000;
-        const note = document.getElementById('cg-input-bonus-note').value || '股票拉回孝親補貼';
-        const elderKey = AppState.activeElderId;
-        const elder = AppState.elders[elderKey];
-
-        elder.pocketMoney.balance += amount;
-        elder.pocketMoney.history.unshift({
-          date: new Date().toLocaleDateString('zh-TW'),
-          sender: elder.contactName || '小明 (兒子)',
-          amount: amount,
-          note: note
-        });
-
-        elder.pendingEnvelope = {
-          amount: amount,
-          note: note,
-          sender: elder.contactName || '小明 (兒子)',
-          timestamp: Date.now()
-        };
-
-        saveAppState();
-        CloudSync.pushElder(elderKey);
-        CaregiverDashboard.render();
-        alert(`🎁 已成功發送 $${amount.toLocaleString()} 元孝親紅包至【${elder.title}】手機！`);
-      };
-    }
-
-    // 晚輩自訂小股貼心話
-    const btnCgSendAdvice = document.getElementById('btn-cg-send-advice');
-    if (btnCgSendAdvice) {
-      btnCgSendAdvice.onclick = () => {
-        const customText = document.getElementById('cg-input-custom-advice').value.trim();
-        if (!customText) return alert('請輸入叮嚀內容！');
-
-        const elderKey = AppState.activeElderId;
-        const elder = AppState.elders[elderKey];
-        if (elder.stocks[0]) {
-          elder.stocks[0].aiAdvice = customText;
-        }
-
-        saveAppState();
-        CloudSync.pushElder(elderKey);
-        alert(`💬 已更新【${elder.title}】手機上的小股貼心話！`);
-      };
-    }
-
     // 分時跳動語音播報開關按鈕
     const btnToggleTickVoice = document.getElementById('btn-toggle-tick-voice');
     if (btnToggleTickVoice) {
@@ -2186,101 +2124,50 @@
       };
     }
 
-    
-
     // 啟動每 5 分鐘健腦操浮動彈窗
-    StockSummaryModalManager.init();
-    BrainModalManager.init();
-
-    document.getElementById('btn-dismiss-night').onclick = () => {
-      document.getElementById('night-rest-layer').classList.add('hidden');
-    };
+    try { StockSummaryModalManager.init(); } catch(e) {}
+    try { BrainModalManager.init(); } catch(e) {}
 
     // 晚輩後台按鈕
-    document.getElementById('btn-close-caregiver').onclick = () => {
-      document.getElementById('modal-caregiver').classList.add('hidden');
-    };
+    const btnCloseCg = document.getElementById('btn-close-caregiver');
+    if (btnCloseCg) btnCloseCg.onclick = () => document.getElementById('modal-caregiver').classList.add('hidden');
 
-    document.getElementById('btn-save-caregiver').onclick = () => {
-      saveCaregiverSettings();
-    };
+    const btnSaveCg = document.getElementById('btn-save-caregiver');
+    if (btnSaveCg) btnSaveCg.onclick = () => saveCaregiverSettings();
 
     // 領取紅包 (長輩端)
-    document.getElementById('btn-claim-envelope').onclick = () => {
-      const elder = getActiveElder();
-      elder.pendingEnvelope = null;
-      saveAppState();
-      CloudSync.pushElder(AppState.activeElderId);
-      document.getElementById('modal-red-envelope').classList.add('hidden');
-      triggerCelebration();
-      renderPocketMoney();
-    };
-
-    // ==========================================
-    // PWA 一鍵安裝核心機制 (比照 1~50 遊戲設計)
-    // ==========================================
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      window.deferredPrompt = e;
-      console.log('PWA beforeinstallprompt captured!');
-    });
-
-    const triggerPWAInstall = () => {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (isIOS) {
-        const iosModal = document.getElementById('iosInstallModal');
-        if (iosModal) iosModal.classList.remove('hidden');
-      } else if (deferredPrompt || window.deferredPrompt) {
-        const promptEvent = deferredPrompt || window.deferredPrompt;
-        promptEvent.prompt();
-        promptEvent.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            const btnHeader = document.getElementById('btn-header-install');
-            if (btnHeader) btnHeader.style.display = 'none';
-          }
-          deferredPrompt = null;
-          window.deferredPrompt = null;
-        });
-      } else {
-        const androidModal = document.getElementById('androidInstallGuideModal');
-        if (androidModal) {
-          androidModal.classList.remove('hidden');
-        } else {
-          alert('📲 請點擊瀏覽器右上角選單 ➜ 選擇「安裝應用程式」或「加到主畫面」！');
-        }
-      }
-    };
-
-    const btnHeaderInstall = document.getElementById('btn-header-install');
-    if (btnHeaderInstall) {
-      btnHeaderInstall.onclick = triggerPWAInstall;
-    }
-
-    const btnBannerInstall = document.getElementById('btn-banner-install');
-    if (btnBannerInstall) {
-      btnBannerInstall.onclick = triggerPWAInstall;
-    }
-
-    const btnBannerDismiss = document.getElementById('btn-banner-dismiss');
-    if (btnBannerDismiss) {
-      btnBannerDismiss.onclick = () => {
-        const androidBanner = document.getElementById('androidInstallBanner');
-        if (androidBanner) androidBanner.classList.add('hidden');
+    const btnClaim = document.getElementById('btn-claim-envelope');
+    if (btnClaim) {
+      btnClaim.onclick = () => {
+        const elder = getActiveElder();
+        elder.pendingEnvelope = null;
+        saveAppState();
+        CloudSync.pushElder(AppState.activeElderId);
+        document.getElementById('modal-red-envelope').classList.add('hidden');
+        triggerCelebration();
+        renderPocketMoney();
       };
     }
+
+    // 捕捉 PWA beforeinstallprompt 事件
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      const btnHeader = document.getElementById('btn-header-install');
+      if (btnHeader) btnHeader.style.display = 'inline-flex';
+      const androidBanner = document.getElementById('androidInstallBanner');
+      if (androidBanner) androidBanner.classList.remove('hidden');
+    });
 
     window.addEventListener('appinstalled', () => {
       const btnHeader = document.getElementById('btn-header-install');
       if (btnHeader) btnHeader.style.display = 'none';
-      deferredPrompt = null;
       window.deferredPrompt = null;
     });
 
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.28')
+      navigator.serviceWorker.register('sw.js?v=1.29')
         .then((reg) => console.log('Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }
