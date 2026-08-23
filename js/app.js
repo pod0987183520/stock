@@ -69,7 +69,7 @@
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
   // ==========================================
-  const STORAGE_KEY = 'xiaogu_stocks_app_data_v6';
+  const STORAGE_KEY = 'xiaogu_stocks_app_data_v7';
 
   const defaultData = {
     deviceRole: 'senior', // 'senior' (長輩端) | 'caregiver' (晚輩端)
@@ -206,13 +206,21 @@
       if (!Array.isArray(data.elders[k].stocks) || data.elders[k].stocks.length < 2) {
         data.elders[k].stocks = JSON.parse(JSON.stringify(defaultData.elders[k].stocks));
       }
-      // 自動校正舊版硬編碼歷史過期價格 (例如 2344 曾寫死 28.5，自動更新為最新盤價 181.0)
+      // 自動校正舊版硬編碼歷史過期價格 (例如 2344 曾寫死 28.5，台積電 2330 曾顯示 980，自動校正為最新行情)
       data.elders[k].stocks.forEach(stock => {
         if (stock.id === '2344' && (stock.currentPrice < 100 || stock.currentPrice === 28.5)) {
           stock.currentPrice = 181.0;
         }
-        if (stock.id === '2330' && (stock.currentPrice < 1500 || stock.currentPrice === 980)) {
-          stock.currentPrice = 2410;
+        if (stock.id === '2330') {
+          if (stock.currentPrice < 1500 || stock.currentPrice === 980) {
+            stock.currentPrice = 2410;
+          }
+          if (stock.buyPrice === 980) {
+            stock.buyPrice = 850;
+          }
+          if (stock.targetPrice < 2000) {
+            stock.targetPrice = 2600;
+          }
         }
         if (stock.id === '2412' && stock.currentPrice === 125) {
           stock.currentPrice = 136.5;
@@ -229,7 +237,7 @@
         const parsed = JSON.parse(saved);
         return ensureDualStocks(Object.assign({}, defaultData, parsed));
       }
-      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data_v3') || localStorage.getItem('xiaogu_stocks_app_data_v2') || localStorage.getItem('xiaogu_stocks_app_data');
+      const oldSaved = localStorage.getItem('xiaogu_stocks_app_data_v6') || localStorage.getItem('xiaogu_stocks_app_data_v3') || localStorage.getItem('xiaogu_stocks_app_data_v2') || localStorage.getItem('xiaogu_stocks_app_data');
       if (oldSaved) {
         const old = JSON.parse(oldSaved);
         const data = JSON.parse(JSON.stringify(defaultData));
@@ -864,7 +872,7 @@
 
     generateQuiz() {
       const elder = getActiveElder();
-      const stock = elder.stocks[0] || { name: '台積電', buyPrice: 850, currentPrice: 980 };
+      const stock = elder.stocks[0] || { name: '台積電', buyPrice: 850, currentPrice: 2410 };
       const isProfit = stock.currentPrice >= stock.buyPrice;
       const isTw = (elder.language === 'taiwanese');
 
@@ -1255,52 +1263,6 @@
     } else {
       return `${num}元`;
     }
-  }
-
-  
-  // ==========================================
-  // 台股熱門代號智能自動對應字典 (純代碼與名稱對應，絕不硬編碼任何過期價格)
-  // ==========================================
-  const TaiwanStockNames = {
-    "2330": "台積電", "2317": "鴻海", "2454": "聯發科", "2344": "華邦電",
-    "2303": "聯電", "2308": "台達電", "2382": "廣達", "3231": "緯創",
-    "2356": "英業達", "2376": "技嘉", "2357": "華碩", "2379": "瑞昱",
-    "2345": "智邦", "3711": "日月光投控", "3008": "大立光", "2337": "旺宏",
-    "2408": "南亞科", "6770": "力積電", "5347": "世界", "2449": "京元電子",
-    "3034": "聯詠", "2377": "微星", "6488": "環球晶", "3037": "欣興",
-    "2368": "金像電", "8069": "元太", "2409": "友達", "3481": "群創",
-    "2881": "富邦金", "2882": "國泰金", "2886": "兆豐金", "2891": "中信金",
-    "2884": "玉山金", "2892": "第一金", "2880": "華南金", "2885": "元大金",
-    "2883": "開發金", "2887": "台新金", "2890": "永豐金", "5880": "合庫金",
-    "2801": "彰銀", "2834": "臺企銀", "2809": "京城銀", "2889": "國票金",
-    "5876": "上海商銀", "5871": "中租-KY", "9941": "裕融", "2412": "中華電",
-    "3045": "台灣大", "4904": "遠傳", "2603": "長榮", "2609": "陽明",
-    "2615": "萬海", "2605": "新興", "2618": "長榮航", "2610": "華航",
-    "2637": "慧洋-KY", "1101": "台泥", "1102": "亞泥", "1301": "台塑",
-    "1303": "南亞", "1326": "台化", "6505": "台塑化", "2002": "中鋼",
-    "2006": "東和鋼鐵", "9958": "世紀鋼", "1519": "華城", "1503": "士電",
-    "1504": "東元", "1513": "中興電", "1514": "亞力", "9910": "豐泰",
-    "9904": "寶成", "2912": "統一超", "1216": "統一", "6176": "瑞儀",
-    "1476": "儒鴻", "1477": "聚陽", "6547": "高端疫苗",
-    "0050": "元大台灣50", "0051": "元大中型100", "0052": "富邦科技",
-    "0056": "元大高股息", "00878": "國泰永續高股息", "00919": "群益台灣精選高息",
-    "00929": "復華台灣科技優息", "00940": "元大台灣價值高息", "006208": "富邦台50",
-    "00713": "元大台灣高息低波", "00918": "大華優利高填息30", "00915": "凱基優選高股息30",
-    "00881": "國泰台灣5G+", "00830": "國泰費城半導體", "00646": "元大S&P500", "00662": "富邦NASDAQ"
-  };
-
-  function lookupTaiwanStock(query) {
-    if (!query) return null;
-    query = query.toString().trim().toUpperCase();
-    if (TaiwanStockNames[query]) {
-      return { id: query, name: TaiwanStockNames[query] };
-    }
-    for (let code in TaiwanStockNames) {
-      if (TaiwanStockNames[code] === query || TaiwanStockNames[code].includes(query)) {
-        return { id: code, name: TaiwanStockNames[code] };
-      }
-    }
-    return null;
   }
 
   // 渲染單一股票一屏看板與大頁籤
@@ -1808,10 +1770,10 @@
       stocksToRender.push({
         id: stocksToRender.length === 0 ? '2330' : '2412',
         name: stocksToRender.length === 0 ? '台積電' : '中華電',
-        buyPrice: stocksToRender.length === 0 ? 980 : 125,
-        shares: 1000,
-        currentPrice: stocksToRender.length === 0 ? 980 : 125,
-        targetPrice: stocksToRender.length === 0 ? 1100 : 135
+        buyPrice: stocksToRender.length === 0 ? 850 : 120,
+        shares: stocksToRender.length === 0 ? 1000 : 3000,
+        currentPrice: stocksToRender.length === 0 ? 2410 : 136.5,
+        targetPrice: stocksToRender.length === 0 ? 2600 : 145
       });
     }
     elder.stocks = stocksToRender;

@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=2.04">
+  <link rel="stylesheet" href="css/style.css?v=2.05">
   <script>
     (function() {
       try {
@@ -125,7 +125,7 @@ AI互動陪伴.給予正向情緒價值">
           <!-- 順序 2. 目前價格 (已取消跳動標籤，不強制換行) -->
           <div class="stock-view-row stock-view-price-row">
             <span class="row-label">目前價格:</span>
-            <span id="view-current-price" class="row-val val-current-price">980 元</span>
+            <span id="view-current-price" class="row-val val-current-price">2410 元</span>
           </div>
 
           <!-- 順序 3. 買入價格 -->
@@ -143,19 +143,19 @@ AI互動陪伴.給予正向情緒價值">
           <!-- 順序 5. 目前賺賠 (賺=紅字 / 賠=綠字) -->
           <div class="stock-view-row stock-view-profit-row">
             <span class="row-label">目前賺賠:</span>
-            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 13萬9千元</span>
+            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 156萬元</span>
           </div>
 
           <!-- 順序 6. 預計賣價 -->
           <div class="stock-view-row">
             <span class="row-label">希望賣價:</span>
-            <span id="view-target-price" class="row-val val-bold">1,000 元</span>
+            <span id="view-target-price" class="row-val val-bold">2,600 元</span>
           </div>
 
           <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 ▲ 賺 / ▼ 賠) -->
           <div class="stock-view-row stock-view-target-profit-row">
             <span class="row-label">希望賺賠:</span>
-            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 15萬元</span>
+            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 175萬元</span>
           </div>
 
         </div>
@@ -205,11 +205,11 @@ AI互動陪伴.給予正向情緒價值">
           <div class="summary-points-list">
             <div class="summary-point-item">
               <span class="point-icon">💰</span>
-              <span class="point-text" id="summary-point-1">買入 850 元，現在 980 元，現賺 13 萬元！</span>
+              <span class="point-text" id="summary-point-1">買入 850 元，現在 2410 元，現賺 156 萬元！</span>
             </div>
             <div class="summary-point-item">
               <span class="point-icon">🎯</span>
-              <span class="point-text" id="summary-point-2">距離目標價 1,000 元只差 20 元，達標會通知晚輩。</span>
+              <span class="point-text" id="summary-point-2">距離目標價 2,600 元只差 190 元，達標會通知晚輩。</span>
             </div>
             <div class="summary-point-item">
               <span class="point-icon">☕</span>
@@ -477,11 +477,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=2.04"></script>
+  <script src="js/app.js?v=2.05"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.04')
+        navigator.serviceWorker.register('sw.js?v=2.05')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });
