@@ -12,7 +12,27 @@
   const ua = (navigator.userAgent || '').toLowerCase();
   const isLine = ua.includes('line');
   const isIOS = /ipad|iphone|ipod/.test(ua) && !window.MSStream;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  function checkIsStandalone() {
+    try {
+      if (window.matchMedia && (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches ||
+        window.matchMedia('(display-mode: window-controls-overlay)').matches
+      )) return true;
+      if (window.navigator && window.navigator.standalone === true) return true;
+      if (document.referrer && document.referrer.indexOf('android-app://') === 0) return true;
+      if (window.location.search && (window.location.search.indexOf('source=pwa') !== -1 || window.location.search.indexOf('mode=standalone') !== -1)) return true;
+      if (localStorage.getItem('xiaogu_pwa_installed') === 'true') return true;
+    } catch(e) {}
+    return false;
+  }
+
+  const isStandalone = checkIsStandalone();
+  if (isStandalone) {
+    document.documentElement.classList.add('is-pwa-standalone');
+  }
 
   if (isLine) {
     // 若尚未帶有跳出外部瀏覽器參數，立即自動重定向
@@ -33,14 +53,29 @@
     e.preventDefault();
     window.deferredPrompt = e;
     const btn = document.getElementById('btn-header-install');
-    if (btn && !isStandalone) btn.classList.remove('hidden');
+    if (btn && !checkIsStandalone()) btn.classList.remove('hidden');
   });
 
   window.addEventListener('appinstalled', () => {
+    localStorage.setItem('xiaogu_pwa_installed', 'true');
+    document.documentElement.classList.add('is-pwa-standalone');
     const btn = document.getElementById('btn-header-install');
     if (btn) btn.classList.add('hidden');
     window.deferredPrompt = null;
+    console.log('小股同學 PWA 安裝成功！已永久標記為已安裝');
   });
+
+  // 異步查詢 Chrome / Android 相關已安裝 App
+  if ('getInstalledRelatedApps' in navigator) {
+    navigator.getInstalledRelatedApps().then(apps => {
+      if (apps && apps.length > 0) {
+        localStorage.setItem('xiaogu_pwa_installed', 'true');
+        document.documentElement.classList.add('is-pwa-standalone');
+        const btn = document.getElementById('btn-header-install');
+        if (btn) btn.classList.add('hidden');
+      }
+    }).catch(() => {});
+  }
 
   // ==========================================
   // 1. 預設資料與狀態管理 (AppState & LocalStorage)
@@ -1921,6 +1956,8 @@
       window.deferredPrompt.prompt();
       window.deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult && choiceResult.outcome === 'accepted') {
+          localStorage.setItem('xiaogu_pwa_installed', 'true');
+          document.documentElement.classList.add('is-pwa-standalone');
           const btnHeader = document.getElementById('btn-header-install');
           if (btnHeader) btnHeader.classList.add('hidden');
         }
@@ -2195,9 +2232,10 @@
     // ==========================================
     const btnHeader = document.getElementById('btn-header-install');
 
-    // 若已經是從手機桌面圖示以獨立 App 開啟 (Standalone)，隱藏按鈕避免干擾
-    if (isStandalone) {
+    // 若已經是從手機桌面圖示以獨立 App 開啟 (Standalone) 或已安裝，隱藏按鈕避免干擾
+    if (checkIsStandalone()) {
       if (btnHeader) btnHeader.classList.add('hidden');
+      document.documentElement.classList.add('is-pwa-standalone');
     } else {
       // 若在普通瀏覽器中開啟（Chrome/Safari/Edge等），預設常駐顯示供長輩一鍵點選
       if (btnHeader) btnHeader.classList.remove('hidden');
@@ -2205,7 +2243,7 @@
 
     // 註冊標準 PWA Service Worker (滿足一鍵安裝條件)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=1.31')
+      navigator.serviceWorker.register('sw.js?v=1.32')
         .then((reg) => console.log('小股同學 Service Worker 註冊成功:', reg.scope))
         .catch((err) => console.log('Service Worker 註冊失敗:', err));
     }

@@ -38,6 +38,11 @@
   display: none !important;
 }
 
+/* 當處於已安裝之獨立 App (PWA Standalone) 模式時，強制隱藏安裝按鈕 */
+.is-pwa-standalone #btn-header-install {
+  display: none !important;
+}
+
 /* 安裝提示橫幅 (Android / 瀏覽器) */
 .install-banner {
   background: linear-gradient(135deg, #1E1B4B, #312E81);
