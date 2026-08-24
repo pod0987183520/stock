@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=3.05">
+  <link rel="stylesheet" href="css/style.css?v=3.06">
   <script>
     (function() {
       try {
@@ -172,9 +172,9 @@ AI互動陪伴.給予正向情緒價值">
         </div>
       </section>
 
-      <!-- 底部版權與延緩失智陪伴聲明 -->
+      <!-- 底部版權與延緩失智陪伴聲明 (點擊系統設計開窗反饋) -->
       <footer class="app-footer">
-        <p class="footer-design">💡 系統設計與開發：陳新昱</p>
+        <p class="footer-design" onclick="openFeedbackModal()" role="button" title="點擊向系統設計與開發者陳新昱提供寶貴建議">💡 系統設計與開發：陳新昱</p>
         <p class="footer-notice">此為延緩失智陪伴工具，實際交易需晚輩代勞</p>
       </footer>
 
@@ -271,16 +271,16 @@ AI互動陪伴.給予正向情緒價值">
     <!-- ========================================== -->
     <div id="caregiver-view-container" class="view-container hidden">
 
-      <!-- 晚輩頂部長輩切換標籤 (1 對 2 爸爸/媽媽) -->
+      <!-- 晚輩頂部長輩切換標籤 (1 對 2 媽媽在左 / 爸爸在右) -->
       <div class="caregiver-elder-switcher">
         <div class="elder-tab-group">
-          <button id="tab-elder-dad" class="btn-elder-tab active">
-            <span class="elder-tab-emoji">👨</span>
-            <span class="elder-tab-name" id="tab-dad-title">爸爸</span>
-          </button>
-          <button id="tab-elder-mom" class="btn-elder-tab">
+          <button id="tab-elder-mom" class="btn-elder-tab active">
             <span class="elder-tab-emoji">👩</span>
             <span class="elder-tab-name" id="tab-mom-title">媽媽</span>
+          </button>
+          <button id="tab-elder-dad" class="btn-elder-tab">
+            <span class="elder-tab-emoji">👨</span>
+            <span class="elder-tab-name" id="tab-dad-title">爸爸</span>
           </button>
         </div>
         <button id="btn-open-settings-direct" class="btn-config-gear" title="設定長輩號碼與後台">⚙️ 設定</button>
@@ -425,29 +425,11 @@ AI互動陪伴.給予正向情緒價值">
         </div>
 
         <!-- 長輩一設定區塊 (包含啟用 Checkbox + 稱謂電話 + 專屬股票最多2檔) -->
-        <div class="elder-config-card" id="config-card-dad">
-          <div class="elder-config-header">
-            <label class="checkbox-label-senior">
-              <input type="checkbox" id="setting-dad-enable" class="custom-checkbox" checked onchange="toggleElderSection('dad')">
-              <span class="elder-config-title">👨 啟用長輩一 (如：爸爸)</span>
-            </label>
-          </div>
-          <div class="elder-config-content" id="config-content-dad">
-            <div class="input-row" style="margin-bottom: 8px;">
-              <input type="text" id="setting-dad-title" class="form-input title-input-compact" placeholder="稱謂" value="爸爸">
-              <input type="tel" id="setting-dad-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0912345678)" value="0912345678">
-            </div>
-            <div class="form-label-mini">📈 長輩一專屬自選股票 (最多 2 檔)：</div>
-            <div id="caregiver-stocks-editor-dad" class="stocks-editor-list"></div>
-          </div>
-        </div>
-
-        <!-- 長輩二設定區塊 (包含啟用 Checkbox + 稱謂電話 + 專屬股票最多2檔) -->
         <div class="elder-config-card" id="config-card-mom">
           <div class="elder-config-header">
             <label class="checkbox-label-senior">
               <input type="checkbox" id="setting-mom-enable" class="custom-checkbox" checked onchange="toggleElderSection('mom')">
-              <span class="elder-config-title">👩 啟用長輩二 (如：媽媽)</span>
+              <span class="elder-config-title">👩 啟用長輩一 (如：媽媽)</span>
             </label>
           </div>
           <div class="elder-config-content" id="config-content-mom">
@@ -455,8 +437,26 @@ AI互動陪伴.給予正向情緒價值">
               <input type="text" id="setting-mom-title" class="form-input title-input-compact" placeholder="稱謂" value="媽媽">
               <input type="tel" id="setting-mom-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0928111222)" value="0928111222">
             </div>
-            <div class="form-label-mini">📈 長輩二專屬自選股票 (最多 2 檔)：</div>
+            <div class="form-label-mini">📈 長輩一專屬自選股票 (最多 2 檔)：</div>
             <div id="caregiver-stocks-editor-mom" class="stocks-editor-list"></div>
+          </div>
+        </div>
+
+        <!-- 長輩二設定區塊 (包含啟用 Checkbox + 稱謂電話 + 專屬股票最多2檔) -->
+        <div class="elder-config-card" id="config-card-dad">
+          <div class="elder-config-header">
+            <label class="checkbox-label-senior">
+              <input type="checkbox" id="setting-dad-enable" class="custom-checkbox" checked onchange="toggleElderSection('dad')">
+              <span class="elder-config-title">👨 啟用長輩二 (如：爸爸)</span>
+            </label>
+          </div>
+          <div class="elder-config-content" id="config-content-dad">
+            <div class="input-row" style="margin-bottom: 8px;">
+              <input type="text" id="setting-dad-title" class="form-input title-input-compact" placeholder="稱謂" value="爸爸">
+              <input type="tel" id="setting-dad-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0912345678)" value="0912345678">
+            </div>
+            <div class="form-label-mini">📈 長輩二專屬自選股票 (最多 2 檔)：</div>
+            <div id="caregiver-stocks-editor-dad" class="stocks-editor-list"></div>
           </div>
         </div>
 
@@ -474,12 +474,41 @@ AI互動陪伴.給予正向情緒價值">
     </div>
   </div>
 
+  <!-- 9. 系統設計與開發建議反饋彈窗 (Feedback Modal) -->
+  <div id="feedbackModal" class="modal-overlay hidden">
+    <div class="modal-card feedback-modal-card">
+      <button id="btn-close-feedback-modal" class="btn-modal-close-x" title="關閉視窗" onclick="closeFeedbackModal()">✕</button>
+      <div class="feedback-modal-header">
+        <div class="feedback-avatar-badge">
+          <span style="font-size: 28px;">💡</span>
+          <span class="feedback-title-badge">系統設計與開發：陳新昱</span>
+        </div>
+      </div>
+      <p class="feedback-subtitle">歡迎留下您寶貴的使用心得或建議，我們將持續用心優化長輩的陪伴體驗！</p>
+      <div class="feedback-form">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 18px; font-weight: 800;">您的姓名或稱呼：</label>
+          <input type="text" id="feedback-input-name" class="form-input" placeholder="例如：陳先生 / 小明" style="font-size: 20px; min-height: 48px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 18px; font-weight: 800;">您的聯絡手機：</label>
+          <input type="tel" id="feedback-input-phone" class="form-input" placeholder="例如：0912345678" style="font-size: 20px; min-height: 48px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 18px; font-weight: 800;">建議事項與回饋：</label>
+          <textarea id="feedback-input-content" class="form-input" rows="5" placeholder="請在此留下您對功能、字體、語音或版面的任何寶貴建議..." style="font-size: 20px; line-height: 1.5; min-height: 130px;"></textarea>
+        </div>
+        <button id="btn-submit-feedback" class="btn-primary-save" onclick="submitFeedback()" style="min-height: 56px; font-size: 22px;">✉️ 送出建議</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=3.05"></script>
+  <script src="js/app.js?v=3.06"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.05')
+        navigator.serviceWorker.register('sw.js?v=3.06')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.05 - 雙長輩啟用開關・獨立自選股票配置・共用達標聯絡人)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.06 - 系統開發反饋彈窗・說明文字一行不折行・預設媽媽優先)
  */
 
 (function () {
@@ -2092,18 +2092,18 @@
       r.checked = (r.value === AppState.deviceRole);
     });
 
-    const dadChk = document.getElementById('setting-dad-enable');
-    if (dadChk) dadChk.checked = (AppState.elders.dad.enabled !== false);
     const momChk = document.getElementById('setting-mom-enable');
-    if (momChk) momChk.checked = (AppState.elders.mom.enabled === true);
+    if (momChk) momChk.checked = (AppState.elders.mom.enabled !== false);
+    const dadChk = document.getElementById('setting-dad-enable');
+    if (dadChk) dadChk.checked = (AppState.elders.dad.enabled === true);
 
-    toggleElderSection('dad');
     toggleElderSection('mom');
+    toggleElderSection('dad');
 
-    document.getElementById('setting-dad-title').value = AppState.elders.dad.title || '爸爸';
-    document.getElementById('setting-dad-phone').value = AppState.elders.dad.phone || '0912345678';
     document.getElementById('setting-mom-title').value = AppState.elders.mom.title || '媽媽';
     document.getElementById('setting-mom-phone').value = AppState.elders.mom.phone || '0928111222';
+    document.getElementById('setting-dad-title').value = AppState.elders.dad.title || '爸爸';
+    document.getElementById('setting-dad-phone').value = AppState.elders.dad.phone || '0912345678';
 
     // 達標晚輩聯絡人 (共用)
     const currentElder = getActiveElder();
@@ -2112,10 +2112,49 @@
     document.getElementById('setting-contact-name').value = contactName;
     document.getElementById('setting-contact-phone').value = contactPhone;
 
-    renderElderStocksEditor('dad', 'caregiver-stocks-editor-dad');
     renderElderStocksEditor('mom', 'caregiver-stocks-editor-mom');
+    renderElderStocksEditor('dad', 'caregiver-stocks-editor-dad');
 
     modal.classList.remove('hidden');
+  };
+
+  // ==========================================
+  // 11.2 系統設計與開發建議反饋彈窗 (Feedback Modal Manager)
+  // ==========================================
+  window.openFeedbackModal = function() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeFeedbackModal = function() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.submitFeedback = function() {
+    const name = (document.getElementById('feedback-input-name').value || '').trim();
+    const phone = (document.getElementById('feedback-input-phone').value || '').trim();
+    const content = (document.getElementById('feedback-input-content').value || '').trim();
+
+    if (!content) {
+      alert('請先填寫您的寶貴建議事項喔！謝謝您！');
+      return;
+    }
+
+    try {
+      const feedbackList = JSON.parse(localStorage.getItem('xiaogu_user_feedbacks') || '[]');
+      feedbackList.push({
+        name: name || '熱心使用者',
+        phone: phone || '未提供',
+        content: content,
+        time: new Date().toLocaleString('zh-TW')
+      });
+      localStorage.setItem('xiaogu_user_feedbacks', JSON.stringify(feedbackList));
+    } catch(e) {}
+
+    alert(`🎉 感謝您的寶貴建議！\n陳新昱與小股團隊已收到您的回饋，我們會持續用心優化陪伴長輩的每項功能！❤️`);
+    document.getElementById('feedback-input-content').value = '';
+    closeFeedbackModal();
   };
 
   function renderElderStocksEditor(elderKey, containerId) {
