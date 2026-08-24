@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.06 - 系統開發反饋彈窗・說明文字一行不折行・預設媽媽優先)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.07 - 即時盤價全自動更新・每30秒輪詢・開機/切回前台/下拉手動刷新)
  */
 
 (function () {
@@ -276,8 +276,211 @@
   }
 
   function getActiveElder() {
-    return AppState.elders[AppState.activeElderId] || AppState.elders.dad;
+    const mom = AppState.elders.mom;
+    const dad = AppState.elders.dad;
+    if (AppState.activeElderId === 'mom' && mom && mom.enabled !== false) {
+      return mom;
+    }
+    if (AppState.activeElderId === 'dad' && dad && dad.enabled !== false) {
+      return dad;
+    }
+    if (mom && mom.enabled !== false) return mom;
+    if (dad && dad.enabled !== false) return dad;
+    return mom || dad || defaultData.elders.mom;
   }
+
+  // ==========================================
+  // 1.5 台股即時盤價查詢與 30 秒自動更新引擎 (RealtimeStockService)
+  // ==========================================
+  const TaiwanStockNames = {
+    '2330': '台積電',
+    '2317': '鴻海',
+    '2454': '聯發科',
+    '2412': '中華電',
+    '2308': '台達電',
+    '2382': '廣達',
+    '3231': '緯創',
+    '2344': '華邦電',
+    '2328': '廣宇',
+    '2303': '聯電',
+    '2881': '富邦金',
+    '2882': '國泰金',
+    '2886': '兆豐金',
+    '2891': '中信金',
+    '2884': '玉山金',
+    '0050': '元大台灣50',
+    '0056': '元大高股息',
+    '00878': '國泰永續高股息',
+    '00919': '群益台灣精選高息',
+    '00929': '復華台灣科技優息',
+    '2603': '長榮',
+    '2609': '陽明',
+    '2615': '萬海',
+    '2002': '中鋼',
+    '1301': '台塑',
+    '1303': '南亞'
+  };
+
+  function lookupTaiwanStock(code) {
+    if (!code) return null;
+    const cleanCode = code.toString().trim().toUpperCase();
+    if (TaiwanStockNames[cleanCode]) {
+      return { id: cleanCode, name: TaiwanStockNames[cleanCode] };
+    }
+    return null;
+  }
+
+  const RealtimeStockService = {
+    isRefreshing: false,
+    lastRefreshTime: null,
+
+    formatDateStr(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    },
+
+    // 查詢單檔股票最新市場行情
+    async fetchQuote(code) {
+      if (!code) return null;
+      const cleanCode = code.toString().trim().toUpperCase();
+      const stockInfo = lookupTaiwanStock(cleanCode) || { id: cleanCode, name: `股票(${cleanCode})` };
+
+      // 嘗試透過 FinMind 查詢最新盤價 (近期 10 天資料)
+      try {
+        const tenDaysAgo = new Date(Date.now() - 10 * 86400000);
+        const startDate = this.formatDateStr(tenDaysAgo);
+        const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${cleanCode}&start_date=${startDate}`;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.data && json.data.length > 0) {
+            const dataArr = json.data;
+            const latest = dataArr[dataArr.length - 1];
+            const prev = dataArr.length >= 2 ? dataArr[dataArr.length - 2] : latest;
+            
+            const currentPrice = parseFloat(latest.close);
+            const prevClose = parseFloat(prev.close);
+            if (!isNaN(currentPrice) && currentPrice > 0) {
+              return {
+                id: cleanCode,
+                name: stockInfo.name,
+                price: currentPrice,
+                prevClose: !isNaN(prevClose) && prevClose > 0 ? prevClose : currentPrice
+              };
+            }
+          }
+        }
+      } catch(e) {
+        console.warn(`[FinMind] 查詢 ${cleanCode} 異常:`, e.message);
+      }
+
+      return null;
+    },
+
+    // 刷新所有已啟用長輩的所有持股價格
+    async refreshAllStockPrices(isUserAction = false) {
+      if (this.isRefreshing) return;
+      this.isRefreshing = true;
+
+      try {
+        const elderKeys = ['mom', 'dad'];
+
+        for (const elderKey of elderKeys) {
+          const elder = AppState.elders[elderKey];
+          if (!elder || elder.enabled === false || !Array.isArray(elder.stocks)) continue;
+
+          for (let i = 0; i < elder.stocks.length; i++) {
+            const stock = elder.stocks[i];
+            if (!stock || !stock.id) continue;
+
+            const quote = await this.fetchQuote(stock.id);
+            if (quote && quote.price) {
+              const oldPrice = stock.currentPrice;
+              stock.currentPrice = quote.price;
+              if (quote.prevClose) stock.prevClose = quote.prevClose;
+              if (quote.name && (!stock.name || stock.name.startsWith('股票('))) {
+                stock.name = quote.name;
+              }
+
+              // 檢查是否有價格變動並觸發語音播報
+              if (stock.prevTickPrice && stock.prevTickPrice !== stock.currentPrice) {
+                const diff = stock.currentPrice - stock.prevTickPrice;
+                const isCurrentActiveStock = (elderKey === AppState.activeElderId && i === currentStockIndex);
+                if (isCurrentActiveStock && AppState.tickVoiceEnabled && AppState.deviceRole === 'senior') {
+                  const actionText = diff > 0 ? `上漲 ${Math.abs(diff)} 元` : `下跌 ${Math.abs(diff)} 元`;
+                  Speech.speak(`${stock.name}最新價格 ${stock.currentPrice} 元，比剛才${actionText}。`);
+                }
+              }
+              stock.prevTickPrice = stock.currentPrice;
+            }
+          }
+        }
+
+        saveAppState();
+        renderAll();
+        this.lastRefreshTime = new Date();
+        console.log(`[RealtimeStockService] 股票盤價已更新完成 (${this.lastRefreshTime.toLocaleTimeString()})`);
+      } catch(e) {
+        console.error('[RealtimeStockService] 刷新盤價失敗:', e);
+      } finally {
+        this.isRefreshing = false;
+      }
+    },
+
+    // 啟動定時輪詢 (每 30 秒自動更新) 與監聽事件
+    initAutoRefresh() {
+      // 1. 開機立即刷新
+      this.refreshAllStockPrices(true);
+
+      // 2. 每 30 秒自動刷新一次
+      setInterval(() => {
+        this.refreshAllStockPrices(false);
+      }, 30000);
+
+      // 3. 當使用者切換分頁或重新開啟 App (從背景切回前台) 時立即刷新
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('[RealtimeStockService] 畫面切回前台，立即抓取最新盤價！');
+          this.refreshAllStockPrices(true);
+        }
+      });
+      window.addEventListener('focus', () => {
+        this.refreshAllStockPrices(true);
+      });
+      window.addEventListener('pageshow', () => {
+        this.refreshAllStockPrices(true);
+      });
+
+      // 4. 手動下拉重新整理支援 (Pull-to-refresh)
+      let touchStartY = 0;
+      window.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+          touchStartY = e.touches[0].clientY;
+        } else {
+          touchStartY = 0;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', (e) => {
+        if (touchStartY > 0) {
+          const touchEndY = e.changedTouches[0].clientY;
+          const pullDistance = touchEndY - touchStartY;
+          if (pullDistance > 70 && window.scrollY === 0) {
+            console.log('[RealtimeStockService] 使用者下拉重新整理，立即更新盤價！');
+            if (navigator.vibrate) navigator.vibrate(40);
+            this.refreshAllStockPrices(true);
+          }
+        }
+      }, { passive: true });
+    }
+  };
 
   // ==========================================
   // 2. 雲端中介同步引擎 (Serverless CloudSync)
@@ -2351,10 +2554,12 @@
       checkPendingEnvelopeForSenior();
     });
 
-    // 啟動即時股市行情自動同步
+    // 啟動即時股市行情自動同步 (開機刷新 + 每30秒輪詢 + 切回前台刷新 + 下拉手動刷新)
     try {
-      RealtimeStockService.syncAllElderStocks();
-    } catch(e) {}
+      RealtimeStockService.initAutoRefresh();
+    } catch(e) {
+      console.error('即時行情服務啟動異常:', e);
+    }
 
     // 晚輩端 1 對 2 標籤切換
     const tabDad = document.getElementById('tab-elder-dad');
