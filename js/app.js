@@ -485,13 +485,15 @@
 
   // ==========================================
   // 3. 台灣股市 100% 即時真實盤價行情引擎 (Realtime Stock Service)
-  // 三重高可用備援架構：FinMind動態近期盤價 (主線) -> 證交所/櫃買中心OpenAPI (備援) -> 基準字典庫 (兜底)
+  // 四重高可用備援架構：Yahoo Finance 即時盤中(主線) -> FinMind近期盤價(次線) -> 證交所OpenAPI(備援) -> 基準字典庫(兜底)
   // ==========================================
   const RealtimeStockService = {
     cache: {},
     inFlight: {},
     twseCache: null,
     twseCacheTime: 0,
+    isRefreshing: false,
+    lastRefreshTime: null,
 
     // 開機全量預載證交所與櫃買中心全台股代碼與名稱字典 (支援全市場千檔股票秒解析)
     async preloadStockDatabase() {
@@ -539,7 +541,7 @@
       } catch(e) {}
     },
 
-    // 動態計算最近 N 天起始日期 YYYY-MM-DD (縮減 99% 封包，提升連線速度至 < 150ms)
+    // 動態計算最近 N 天起始日期 YYYY-MM-DD
     getRecentStartDate(daysAgo = 10) {
       const d = new Date(Date.now() - daysAgo * 86400000);
       const y = d.getFullYear();
@@ -548,14 +550,14 @@
       return `${y}-${m}-${day}`;
     },
 
-    // 取得單檔台股即時成交價與名稱
+    // 取得單檔台股即時成交價與昨收價
     async fetchQuote(rawCode) {
       if (!rawCode) return null;
       const code = rawCode.toString().trim().toUpperCase();
 
-      // 1. 檢查 30 秒內的記憶體快取
+      // 1. 檢查 15 秒內的記憶體快取
       const cached = this.cache[code];
-      if (cached && (Date.now() - cached.timestamp < 30000)) {
+      if (cached && (Date.now() - cached.timestamp < 15000)) {
         return cached.data;
       }
 
@@ -568,41 +570,90 @@
         let quote = null;
         let stockName = (TaiwanStockNames[code]) || (this.twseCache && this.twseCache[code]?.name) || `股票(${code})`;
 
-        // 策略 1: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價，極速回傳)
+        // 策略 0: Yahoo Finance 1 分鐘線盤中即時行情 (優先取得每分真實跳動現價與昨收)
         try {
-          const startDate = this.getRecentStartDate(10);
-          const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${startDate}`;
+          const isOtc = ['6547', '8069', '5483', '6488', '3293', '8299', '5347', '3529'].includes(code);
+          const symbolsToTry = isOtc ? [`${code}.TWO`, `${code}.TW`] : [`${code}.TW`, `${code}.TWO`];
           
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3500);
-          
-          const res = await fetch(fmUrl, { signal: controller.signal });
-          clearTimeout(timeoutId);
+          for (const sym of symbolsToTry) {
+            if (quote) break;
+            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1m&range=1d`;
+            const proxyUrls = [
+              `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+              `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+            ];
 
-          if (res.ok) {
-            const json = await res.json();
-            if (json && Array.isArray(json.data) && json.data.length > 0) {
-              const latest = json.data[json.data.length - 1];
-              const prevDay = (json.data.length >= 2) ? json.data[json.data.length - 2] : null;
-              const prevCloseVal = prevDay && typeof prevDay.close === 'number' ? parseFloat(prevDay.close) : parseFloat(latest.open || latest.close);
-              if (latest && typeof latest.close === 'number') {
-                if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
-                  stockName = this.twseCache[code].name;
-                  TaiwanStockNames[code] = stockName;
+            for (const pUrl of proxyUrls) {
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2800);
+                const res = await fetch(pUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                  const json = await res.json();
+                  const meta = json?.chart?.result?.[0]?.meta;
+                  if (meta && typeof meta.regularMarketPrice === 'number' && meta.regularMarketPrice > 0) {
+                    const price = meta.regularMarketPrice;
+                    const prevClose = (typeof meta.chartPreviousClose === 'number' && meta.chartPreviousClose > 0)
+                      ? meta.chartPreviousClose
+                      : (typeof meta.previousClose === 'number' && meta.previousClose > 0 ? meta.previousClose : price);
+
+                    if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
+                      stockName = this.twseCache[code].name;
+                      TaiwanStockNames[code] = stockName;
+                    }
+
+                    quote = {
+                      id: code,
+                      name: stockName,
+                      price: price,
+                      prevClose: prevClose,
+                      source: 'yahoo-realtime'
+                    };
+                    break;
+                  }
                 }
-                quote = {
-                  id: code,
-                  name: stockName,
-                  price: parseFloat(latest.close),
-                  prevClose: prevCloseVal,
-                  date: latest.date,
-                  source: 'finmind'
-                };
-              }
+              } catch (err) {}
             }
           }
-        } catch (e) {
-          // 靜默降級進入備援策略
+        } catch (e) {}
+
+        // 策略 1: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價，極速回傳)
+        if (!quote) {
+          try {
+            const startDate = this.getRecentStartDate(10);
+            const fmUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${startDate}`;
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            
+            const res = await fetch(fmUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+              const json = await res.json();
+              if (json && Array.isArray(json.data) && json.data.length > 0) {
+                const latest = json.data[json.data.length - 1];
+                const prevDay = (json.data.length >= 2) ? json.data[json.data.length - 2] : null;
+                const prevCloseVal = prevDay && typeof prevDay.close === 'number' ? parseFloat(prevDay.close) : parseFloat(latest.open || latest.close);
+                if (latest && typeof latest.close === 'number') {
+                  if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
+                    stockName = this.twseCache[code].name;
+                    TaiwanStockNames[code] = stockName;
+                  }
+                  quote = {
+                    id: code,
+                    name: stockName,
+                    price: parseFloat(latest.close),
+                    prevClose: prevCloseVal,
+                    date: latest.date,
+                    source: 'finmind'
+                  };
+                }
+              }
+            }
+          } catch (e) {}
         }
 
         // 策略 2: 證交所 TWSE / 櫃買中心 TPEx 官方開放資料 OpenAPI 備援
@@ -678,7 +729,7 @@
 
     // 批量刷新長輩自選股票
     async refreshElderStocks(elder) {
-      if (!elder || !elder.stocks || elder.stocks.length === 0) return false;
+      if (!elder || elder.enabled === false || !elder.stocks || elder.stocks.length === 0) return false;
       let changed = false;
 
       for (let i = 0; i < elder.stocks.length; i++) {
@@ -706,27 +757,106 @@
       return changed;
     },
 
-    // 全局長輩股票即時同步
-    async syncAllElderStocks() {
-      const activeElder = getActiveElder();
-      let changed = await this.refreshElderStocks(activeElder);
+    // 全局長輩股票即時同步 (含主動通知與防重疊保護)
+    async syncAllElderStocks(isUserTriggered = false) {
+      if (this.isRefreshing) return;
+      this.isRefreshing = true;
 
-      const otherId = (AppState.activeElderId === 'dad') ? 'mom' : 'dad';
-      const otherElder = AppState.elders[otherId];
-      if (otherElder) {
-        this.refreshElderStocks(otherElder).then(otherChanged => {
+      try {
+        const activeElder = getActiveElder();
+        let changed = await this.refreshElderStocks(activeElder);
+
+        const otherId = (AppState.activeElderId === 'dad') ? 'mom' : 'dad';
+        const otherElder = AppState.elders[otherId];
+        if (otherElder && otherElder.enabled !== false) {
+          const otherChanged = await this.refreshElderStocks(otherElder);
           if (otherChanged) {
             saveAppState();
             CloudSync.pushElder(otherId);
           }
-        });
-      }
+        }
 
-      if (changed) {
-        saveAppState();
-        CloudSync.pushElder(AppState.activeElderId);
-        renderAll();
+        if (changed || isUserTriggered) {
+          saveAppState();
+          CloudSync.pushElder(AppState.activeElderId);
+          renderAll();
+        }
+
+        // 若啟用即時跳動語音且偵測到當前股票有價格變動
+        if (changed && AppState.tickVoiceEnabled && AppState.deviceRole === 'senior') {
+          const targetStock = activeElder.stocks && activeElder.stocks[currentStockIndex || 0];
+          if (targetStock && targetStock.lastDiff !== 0) {
+            speakPriceTickAlert(activeElder, targetStock, targetStock.lastDiff);
+          }
+        }
+
+        this.lastRefreshTime = new Date();
+      } catch (err) {
+        console.warn('[RealtimeStockService] 行情同步略過:', err);
+      } finally {
+        this.isRefreshing = false;
       }
+    },
+
+    // 啟動 30 秒自動輪詢、切換前台刷新與下拉手動刷新
+    initAutoRefresh() {
+      // 1. 開機立即刷新
+      this.syncAllElderStocks();
+
+      // 2. 每 30 秒自動更新一次
+      setInterval(() => {
+        this.syncAllElderStocks(false);
+      }, 30000);
+
+      // 3. 切換前台/聚焦自動刷新
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.syncAllElderStocks(true);
+        }
+      });
+      window.addEventListener('focus', () => {
+        this.syncAllElderStocks(true);
+      });
+      window.addEventListener('pageshow', () => {
+        this.syncAllElderStocks(true);
+      });
+
+      // 4. 手動下拉重新整理 (Pull-to-refresh)
+      let touchStartY = 0;
+      window.addEventListener('touchstart', (e) => {
+        if (window.scrollY <= 5) {
+          touchStartY = e.touches[0].clientY;
+        } else {
+          touchStartY = 0;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchend', (e) => {
+        if (touchStartY > 0) {
+          const touchEndY = e.changedTouches[0].clientY;
+          const pullDistance = touchEndY - touchStartY;
+          if (pullDistance > 60 && window.scrollY <= 5) {
+            if (navigator.vibrate) navigator.vibrate(30);
+            this.showRefreshToast();
+            this.syncAllElderStocks(true);
+          }
+        }
+      }, { passive: true });
+    },
+
+    showRefreshToast() {
+      let toast = document.getElementById('stock-refresh-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'stock-refresh-toast';
+        toast.className = 'stock-refresh-toast';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = '🔄 已更新最新台股行情';
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 1800);
     }
   };
 
@@ -2351,10 +2481,12 @@
       checkPendingEnvelopeForSenior();
     });
 
-    // 啟動即時股市行情自動同步
+    // 啟動即時股市行情自動同步 (開機刷新 + 每30秒輪詢 + 切回前台刷新 + 下拉手動刷新)
     try {
-      RealtimeStockService.syncAllElderStocks();
-    } catch(e) {}
+      RealtimeStockService.initAutoRefresh();
+    } catch(e) {
+      console.error('即時行情服務啟動異常:', e);
+    }
 
     // 晚輩端 1 對 2 標籤切換
     const tabDad = document.getElementById('tab-elder-dad');

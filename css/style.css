@@ -2435,3 +2435,27 @@ body {
 .btn-guide-close:active {
   transform: scale(0.95);
 }
+
+/* 下拉重新整理提示 Toast */
+.stock-refresh-toast {
+  position: fixed;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(16, 185, 129, 0.95);
+  color: #FFFFFF;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stock-refresh-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
