@@ -667,6 +667,35 @@
               }
             }
           }
+
+          // 若全量快取中沒有該股票，動態向 GAS 發送單檔即時查詢 (?code=XXXX)
+          if (!quote) {
+            const targetUrl = (AppState.gasApiUrl && AppState.gasApiUrl.trim()) ? AppState.gasApiUrl.trim() : OFFICIAL_GAS_API_URL;
+            if (targetUrl) {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 6500);
+              const singleRes = await fetch(targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'code=' + encodeURIComponent(code), { signal: controller.signal });
+              clearTimeout(timeoutId);
+              if (singleRes.ok) {
+                const singleJson = await singleRes.json();
+                if (singleJson && typeof singleJson === 'object' && singleJson.price > 0) {
+                  const p = parseFloat(singleJson.price);
+                  const prev = parseFloat(singleJson.prevClose) || p;
+                  if (!isNaN(p) && p > 0) {
+                    quote = {
+                      id: code,
+                      name: singleJson.name || stockName,
+                      price: p,
+                      prevClose: prev,
+                      source: 'google-sheets-gas-dynamic'
+                    };
+                    // 寫入本地記憶體快取
+                    if (this.gasCache) this.gasCache[code] = quote;
+                  }
+                }
+              }
+            }
+          }
         } catch (e) {}
 
         // 策略 2: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價)
