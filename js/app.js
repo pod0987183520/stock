@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.01 - 看板單項語音發音・台股紅漲綠跌白平盤・防誤觸間距升級版)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.02 - 切換頁籤 4 大核心訊息播報・拔除錢字號與三角形純淨版)
  */
 
 (function () {
@@ -1279,7 +1279,7 @@
 
       if (streakEl) streakEl.textContent = `⭐ ${elder.gameStats.streak} 天`;
       if (medalsEl) medalsEl.textContent = `🏅 ${elder.gameStats.medals} 枚`;
-      if (pocketBalEl) pocketBalEl.textContent = `$${elder.pocketMoney.balance.toLocaleString()}`;
+      if (pocketBalEl) pocketBalEl.textContent = `${elder.pocketMoney.balance.toLocaleString()} 元`;
 
       const stocksListEl = document.getElementById('cg-stocks-monitor-list');
       if (stocksListEl) {
@@ -1292,12 +1292,12 @@
           row.innerHTML = `
             <div>
               <div class="cg-stock-name">${stock.name} <span class="cg-stock-meta">(${stock.id})</span></div>
-              <div class="cg-stock-meta">買入: $${stock.buyPrice} | 目標: $${stock.targetPrice} | 持有: ${stock.shares}股</div>
+              <div class="cg-stock-meta">買入: ${stock.buyPrice} 元 | 目標: ${stock.targetPrice} 元 | 持有: ${stock.shares}股</div>
             </div>
             <div class="cg-stock-price-box">
-              <div class="cg-stock-current">$${stock.currentPrice}</div>
+              <div class="cg-stock-current">${stock.currentPrice} 元</div>
               <div class="cg-stock-meta" style="color: ${isProfit ? '#34D399' : '#FBBF24'}">
-                ${isProfit ? '▲ 獲利' : '▼ 待漲'} $${Math.abs(diff).toLocaleString()}
+                ${isProfit ? '獲利' : '待漲'} ${Math.abs(diff).toLocaleString()} 元
               </div>
             </div>
           `;
@@ -1487,10 +1487,10 @@
     const nameEl = document.getElementById('view-stock-name');
     if (nameEl) nameEl.textContent = `${stock.name}`;
 
-    // 2. 目前價格 (依台股規則：比昨收價漲=紅字 / 跌=綠字 / 平=白字)
+    // 2. 目前價格 (依台股規則：比昨收價漲=紅字 / 跌=綠字 / 平=白字，移除 $ 符號)
     const priceEl = document.getElementById('view-current-price');
     if (priceEl) {
-      priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
+      priceEl.textContent = `${stock.currentPrice.toLocaleString()} 元`;
       if (typeof stock.prevClose === 'number' && stock.prevClose > 0) {
         if (stock.currentPrice > stock.prevClose) {
           priceEl.className = 'row-val val-current-price val-price-up';
@@ -1504,9 +1504,9 @@
       }
     }
 
-    // 3. 買入價格
+    // 3. 買入價格 (移除 $ 符號)
     const buyPriceEl = document.getElementById('view-buy-price');
-    if (buyPriceEl) buyPriceEl.textContent = `$${stock.buyPrice.toLocaleString()} 元`;
+    if (buyPriceEl) buyPriceEl.textContent = `${stock.buyPrice.toLocaleString()} 元`;
 
     // 4. 買入數量
     const sharesEl = document.getElementById('view-shares');
@@ -1515,32 +1515,32 @@
       sharesEl.textContent = `${sheets}(${stock.shares.toLocaleString()} 股)`;
     }
 
-    // 5. 目前賺賠 (台灣股市規範：賺=紅字 / 賠=綠字)
+    // 5. 目前賺賠 (台灣股市規範：賺=紅字 / 賠=綠字，移除 ▲/▼ 三角形)
     const currentProfitEl = document.getElementById('view-current-profit');
     if (currentProfitEl) {
       if (isProfit) {
         currentProfitEl.className = 'row-val val-profit-red';
-        currentProfitEl.textContent = `▲ 賺 ${formatSeniorMoneyText(profitDiff)}`;
+        currentProfitEl.textContent = `賺 ${formatSeniorMoneyText(profitDiff)}`;
       } else {
         currentProfitEl.className = 'row-val val-loss-green';
-        currentProfitEl.textContent = `▼ 賠 ${formatSeniorMoneyText(profitDiff)}`;
+        currentProfitEl.textContent = `賠 ${formatSeniorMoneyText(profitDiff)}`;
       }
     }
 
-    // 6. 預計賣價
+    // 6. 預計賣價 (移除 $ 符號)
     const targetPriceEl = document.getElementById('view-target-price');
-    if (targetPriceEl) targetPriceEl.textContent = `$${stock.targetPrice.toLocaleString()} 元`;
+    if (targetPriceEl) targetPriceEl.textContent = `${stock.targetPrice.toLocaleString()} 元`;
 
-    // 7. 預計賺賠 (刪除預計二字，直接顯示 ▲ 賺 / ▼ 賠，台灣股市規範：賺=紅字 / 賠=綠字)
+    // 7. 預計賺賠 (直接顯示 賺 / 賠，台灣股市規範：賺=紅字 / 賠=綠字，移除 ▲/▼ 三角形)
     const targetProfitEl = document.getElementById('view-target-profit');
     if (targetProfitEl) {
       const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
       if (isTargetProfit) {
         targetProfitEl.className = 'row-val val-target-red';
-        targetProfitEl.textContent = `▲ 賺 ${formatSeniorMoneyText(targetDiff)}`;
+        targetProfitEl.textContent = `賺 ${formatSeniorMoneyText(targetDiff)}`;
       } else {
         targetProfitEl.className = 'row-val val-target-green';
-        targetProfitEl.textContent = `▼ 賠 ${formatSeniorMoneyText(targetDiff)}`;
+        targetProfitEl.textContent = `賠 ${formatSeniorMoneyText(targetDiff)}`;
       }
     }
   }
@@ -1682,25 +1682,18 @@
     }
   };
 
-  // 切換股票時之精準語音播報 (100% 依據螢幕顯示金額朗讀，絕不四捨五入簡化)
+  // 切換股票時之精準語音播報 (依序播報長輩最想聽到的 4 個核心訊息：①股票名稱 ②目前價格 ③買入價格 ④希望賣價)
   function speakCurrentStockBrief() {
     const elder = getActiveElder();
     const isTw = (elder.language === 'taiwanese');
     const stock = elder.stocks[currentStockIndex];
     if (!stock) return;
 
-    const isProfit = (stock.currentPrice >= stock.buyPrice);
-    const diff = Math.abs((stock.currentPrice - stock.buyPrice) * stock.shares);
-    const moneyText = formatSeniorMoneyText(diff);
-
     let text = '';
     if (isTw) {
-      const twMoney = moneyText.replace(/元/g, '圓');
-      text = `切換到${stock.name}，目前現價是 ${stock.currentPrice} 圓。` +
-             (isProfit ? `目前趁 ${twMoney}！` : `目前稍微休息待漲，差 ${twMoney}！`);
+      text = `切換到${stock.name}。目前現價 ${stock.currentPrice} 圓，買進價格 ${stock.buyPrice} 圓，希望賣價 ${stock.targetPrice} 圓。`;
     } else {
-      text = `為您切換到${stock.name}，目前現價是 ${stock.currentPrice} 元。` +
-             (isProfit ? `目前賺 ${moneyText}！` : `目前稍微拉回休息，差 ${moneyText}！`);
+      text = `切換到${stock.name}。目前價格 ${stock.currentPrice} 元，買入價格 ${stock.buyPrice} 元，希望賣價 ${stock.targetPrice} 元。`;
     }
     Speech.speak(text);
   }

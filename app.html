@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=3.01">
+  <link rel="stylesheet" href="css/style.css?v=3.02">
   <script>
     (function() {
       try {
@@ -144,7 +144,7 @@ AI互動陪伴.給予正向情緒價值">
           <!-- 順序 5. 目前賺賠 (賺=紅字 / 賠=綠字) -->
           <div class="stock-view-row stock-view-profit-row" onclick="speakStockItem('currentProfit')" role="button" title="點擊聽目前賺賠">
             <span class="row-label">目前賺賠:</span>
-            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 156萬元</span>
+            <span id="view-current-profit" class="row-val val-profit-red">賺 156萬元</span>
           </div>
 
           <!-- 順序 6. 預計賣價 -->
@@ -153,10 +153,10 @@ AI互動陪伴.給予正向情緒價值">
             <span id="view-target-price" class="row-val val-bold">2,600 元</span>
           </div>
 
-          <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 ▲ 賺 / ▼ 賠) -->
+          <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 賺 / 賠) -->
           <div class="stock-view-row stock-view-target-profit-row" onclick="speakStockItem('targetProfit')" role="button" title="點擊聽希望賺賠">
             <span class="row-label">希望賺賠:</span>
-            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 175萬元</span>
+            <span id="view-target-profit" class="row-val val-target-red">賺 175萬元</span>
           </div>
 
         </div>
@@ -319,7 +319,7 @@ AI互動陪伴.給予正向情緒價值">
             </div>
             <div class="cg-stat-box">
               <span class="cg-stat-label">孝親零用金餘額</span>
-              <span id="cg-pocket-balance" class="cg-stat-value val-gold">$15,000</span>
+              <span id="cg-pocket-balance" class="cg-stat-value val-gold">15,000 元</span>
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ AI互動陪伴.給予正向情緒價值">
       <div class="envelope-icon">🧧</div>
       <h2 class="envelope-title">收到孝親紅包囉！</h2>
       <p id="envelope-sender" class="envelope-desc">來自 小明（兒子） 的貼心補貼</p>
-      <div id="envelope-amount" class="envelope-amount">+ $5,000 元</div>
+      <div id="envelope-amount" class="envelope-amount">+ 5,000 元</div>
       <p id="envelope-note" class="envelope-note">「爸，股票少算我的，您安心過日子！」</p>
       <button id="btn-claim-envelope" class="btn-primary-senior">開心收下紅包 🎁</button>
     </div>
@@ -487,11 +487,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=3.01"></script>
+  <script src="js/app.js?v=3.02"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.01')
+        navigator.serviceWorker.register('sw.js?v=3.02')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });
