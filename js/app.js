@@ -516,6 +516,9 @@
     }
   };
 
+  // 全域官方預設 Google 試算表 GAS API 網址 (開箱即用，免任何設定)
+  const OFFICIAL_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwH7qqHcl2uYCzUr9Y0Pdxlxi0FRAmTmuABqa7BAZPlVI751jZ6OsjEE36EhDLlHpM1/exec';
+
   // ==========================================
   // 3.5 股票行情與擬真跳動引擎 (方法一: Google Sheets GAS + 前端擬真心跳)
   // ==========================================
@@ -584,26 +587,39 @@
       return `${y}-${m}-${day}`;
     },
 
-    // 從 Google Apps Script Web App 取得試算表中的官方即時行情
+    // 從 Google Apps Script Web App 取得試算表中的官方即時行情 (支援預設端點與自動補零相容)
     async fetchFromGAS() {
-      if (!AppState.gasApiUrl) return null;
+      const targetUrl = (AppState.gasApiUrl && AppState.gasApiUrl.trim()) ? AppState.gasApiUrl.trim() : OFFICIAL_GAS_API_URL;
+      if (!targetUrl) return null;
       if (this.gasCache && (Date.now() - this.gasCacheTime < 300000)) {
         return this.gasCache;
       }
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(AppState.gasApiUrl, { signal: controller.signal });
+        const timeoutId = setTimeout(() => controller.abort(), 6500);
+        const res = await fetch(targetUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (res.ok) {
           const json = await res.json();
           if (json && typeof json === 'object') {
-            this.gasCache = json;
+            const normalizedData = {};
+            for (const k in json) {
+              const item = json[k];
+              const strKey = String(k).trim();
+              normalizedData[strKey] = item;
+              // 補零相容 (如 50 -> 0050, 878 -> 00878, 56 -> 0056)
+              if (strKey.length <= 3 && !isNaN(strKey)) {
+                const padded = strKey.padStart(4, '0');
+                normalizedData[padded] = item;
+                if (item && item.id) item.id = padded;
+              }
+            }
+            this.gasCache = normalizedData;
             this.gasCacheTime = Date.now();
-            console.log('[GAS API] 成功取得 Google 試算表最新行情:', json);
-            return json;
+            console.log('[GAS API] 成功取得官方 Google 試算表最新行情:', normalizedData);
+            return normalizedData;
           }
         }
       } catch (err) {
@@ -632,24 +648,26 @@
         let quote = null;
         let stockName = (TaiwanStockNames[code]) || (this.twseCache && this.twseCache[code]?.name) || `股票(${code})`;
 
-        // 策略 1: Google 試算表 Apps Script API (方法一主要來源)
-        if (AppState.gasApiUrl) {
+        // 策略 1: Google 試算表 Apps Script API (全 App 官方主要來源)
+        try {
           const gasData = await this.fetchFromGAS();
-          if (gasData && gasData[code]) {
-            const item = gasData[code];
-            const p = parseFloat(item.price);
-            const prev = parseFloat(item.prevClose) || p;
-            if (!isNaN(p) && p > 0) {
-              quote = {
-                id: code,
-                name: item.name || stockName,
-                price: p,
-                prevClose: prev,
-                source: 'google-sheets-gas'
-              };
+          if (gasData) {
+            const matchedItem = gasData[code] || gasData[code.replace(/^0+/, '')];
+            if (matchedItem) {
+              const p = parseFloat(matchedItem.price);
+              const prev = parseFloat(matchedItem.prevClose) || p;
+              if (!isNaN(p) && p > 0) {
+                quote = {
+                  id: code,
+                  name: matchedItem.name || stockName,
+                  price: p,
+                  prevClose: prev,
+                  source: 'google-sheets-gas'
+                };
+              }
             }
           }
-        }
+        } catch (e) {}
 
         // 策略 2: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價)
         if (!quote) {
