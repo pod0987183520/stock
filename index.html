@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=3.00">
+  <link rel="stylesheet" href="css/style.css?v=3.01">
   <script>
     (function() {
       try {
@@ -113,50 +113,50 @@ AI互動陪伴.給予正向情緒價值">
         </div>
       </div>
 
-      <!-- 單一股票一屏全景主看板 (嚴格 7 大順序) -->
+      <!-- 單一股票一屏全景主看板 (嚴格 7 大順序，每項支援點擊發音與加大間距防誤觸) -->
       <section class="single-stock-section" aria-label="我的股票看板">
         <div class="card single-stock-card">
 
           <!-- 順序 1. 股票名稱 -->
-          <div class="stock-view-row stock-view-name-row">
+          <div class="stock-view-row stock-view-name-row" onclick="speakStockItem('name')" role="button" title="點擊聽股票名稱">
             <span class="row-label">股票名稱</span>
             <span id="view-stock-name" class="row-val val-stock-name">台積電</span>
           </div>
 
-          <!-- 順序 2. 目前價格 (已取消跳動標籤，不強制換行) -->
-          <div class="stock-view-row stock-view-price-row">
+          <!-- 順序 2. 目前價格 (依台股規則：比昨收漲=紅字 / 跌=綠字 / 平=白字) -->
+          <div class="stock-view-row stock-view-price-row" onclick="speakStockItem('price')" role="button" title="點擊聽目前現價與漲跌">
             <span class="row-label">目前價格:</span>
             <span id="view-current-price" class="row-val val-current-price">2410 元</span>
           </div>
 
           <!-- 順序 3. 買入價格 -->
-          <div class="stock-view-row">
+          <div class="stock-view-row" onclick="speakStockItem('buyPrice')" role="button" title="點擊聽買入價格">
             <span class="row-label">買入價格:</span>
             <span id="view-buy-price" class="row-val val-bold">850 元</span>
           </div>
 
           <!-- 順序 4. 買入數量 -->
-          <div class="stock-view-row">
+          <div class="stock-view-row" onclick="speakStockItem('shares')" role="button" title="點擊聽買入數量">
             <span class="row-label">買入數量:</span>
             <span id="view-shares" class="row-val val-bold">1 張 (1,000 股)</span>
           </div>
 
           <!-- 順序 5. 目前賺賠 (賺=紅字 / 賠=綠字) -->
-          <div class="stock-view-row stock-view-profit-row">
+          <div class="stock-view-row stock-view-profit-row" onclick="speakStockItem('currentProfit')" role="button" title="點擊聽目前賺賠">
             <span class="row-label">目前賺賠:</span>
-            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 13萬9千元</span>
+            <span id="view-current-profit" class="row-val val-profit-red">▲ 賺 156萬元</span>
           </div>
 
           <!-- 順序 6. 預計賣價 -->
-          <div class="stock-view-row">
+          <div class="stock-view-row" onclick="speakStockItem('targetPrice')" role="button" title="點擊聽希望賣價">
             <span class="row-label">希望賣價:</span>
-            <span id="view-target-price" class="row-val val-bold">1,000 元</span>
+            <span id="view-target-price" class="row-val val-bold">2,600 元</span>
           </div>
 
           <!-- 順序 7. 預計賺賠 (賺=紅字 / 賠=綠字，直接顯示 ▲ 賺 / ▼ 賠) -->
-          <div class="stock-view-row stock-view-target-profit-row">
+          <div class="stock-view-row stock-view-target-profit-row" onclick="speakStockItem('targetProfit')" role="button" title="點擊聽希望賺賠">
             <span class="row-label">希望賺賠:</span>
-            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 15萬元</span>
+            <span id="view-target-profit" class="row-val val-target-red">▲ 賺 175萬元</span>
           </div>
 
         </div>
@@ -487,11 +487,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=3.00"></script>
+  <script src="js/app.js?v=3.01"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.00')
+        navigator.serviceWorker.register('sw.js?v=3.01')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v1.07 - 分時跳動動態語音播報版)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.01 - 看板單項語音發音・台股紅漲綠跌白平盤・防誤觸間距升級版)
  */
 
 (function () {
@@ -92,6 +92,7 @@
             buyPrice: 850,
             shares: 1000,
             currentPrice: 2410,
+            prevClose: 2390,
             prevTickPrice: 2410,
             lastDiff: 0,
             targetPrice: 2600,
@@ -105,6 +106,7 @@
             buyPrice: 120,
             shares: 3000,
             currentPrice: 136.5,
+            prevClose: 136.5,
             prevTickPrice: 136.5,
             lastDiff: 0,
             targetPrice: 145,
@@ -148,6 +150,7 @@
             buyPrice: 38,
             shares: 5000,
             currentPrice: 42,
+            prevClose: 41.5,
             prevTickPrice: 42,
             lastDiff: 0,
             targetPrice: 45,
@@ -161,6 +164,7 @@
             buyPrice: 35,
             shares: 4000,
             currentPrice: 38,
+            prevClose: 38.2,
             prevTickPrice: 38,
             lastDiff: 0,
             targetPrice: 40,
@@ -206,14 +210,21 @@
       if (!Array.isArray(data.elders[k].stocks) || data.elders[k].stocks.length < 2) {
         data.elders[k].stocks = JSON.parse(JSON.stringify(defaultData.elders[k].stocks));
       }
-      // 自動校正舊版硬編碼歷史過期價格 (例如 2344 曾寫死 28.5，台積電 2330 曾顯示 980，自動校正為最新行情)
+      // 自動校正舊版硬編碼歷史過期價格與昨收價
       data.elders[k].stocks.forEach(stock => {
+        if (typeof stock.prevClose !== 'number' || stock.prevClose <= 0) {
+          stock.prevClose = stock.currentPrice;
+        }
         if (stock.id === '2344' && (stock.currentPrice < 100 || stock.currentPrice === 28.5)) {
           stock.currentPrice = 181.0;
+          stock.prevClose = 179.0;
         }
         if (stock.id === '2330') {
           if (stock.currentPrice < 1500 || stock.currentPrice === 980) {
             stock.currentPrice = 2410;
+          }
+          if (stock.prevClose === 980 || stock.prevClose < 1500) {
+            stock.prevClose = 2390;
           }
           if (stock.buyPrice === 980) {
             stock.buyPrice = 850;
@@ -224,6 +235,7 @@
         }
         if (stock.id === '2412' && stock.currentPrice === 125) {
           stock.currentPrice = 136.5;
+          stock.prevClose = 136.5;
         }
       });
     });
@@ -571,6 +583,8 @@
             const json = await res.json();
             if (json && Array.isArray(json.data) && json.data.length > 0) {
               const latest = json.data[json.data.length - 1];
+              const prevDay = (json.data.length >= 2) ? json.data[json.data.length - 2] : null;
+              const prevCloseVal = prevDay && typeof prevDay.close === 'number' ? parseFloat(prevDay.close) : parseFloat(latest.open || latest.close);
               if (latest && typeof latest.close === 'number') {
                 if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
                   stockName = this.twseCache[code].name;
@@ -580,7 +594,7 @@
                   id: code,
                   name: stockName,
                   price: parseFloat(latest.close),
-                  prevClose: parseFloat(latest.open || latest.close),
+                  prevClose: prevCloseVal,
                   date: latest.date,
                   source: 'finmind'
                 };
@@ -629,6 +643,7 @@
                   id: code,
                   name: stockName,
                   price: cachedInfo.price,
+                  prevClose: cachedInfo.price,
                   source: 'twse-openapi'
                 };
               } else if (quote) {
@@ -644,6 +659,7 @@
             id: code,
             name: stockName,
             price: TaiwanStockBasePrices[code],
+            prevClose: TaiwanStockBasePrices[code],
             source: 'base-fallback'
           };
         }
@@ -670,14 +686,19 @@
         if (!stock.id) continue;
         try {
           const q = await this.fetchQuote(stock.id);
-          if (q && q.price && q.price !== stock.currentPrice) {
-            stock.prevTickPrice = stock.currentPrice;
-            stock.lastDiff = q.price - stock.currentPrice;
-            stock.currentPrice = q.price;
-            if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
-              stock.name = q.name;
+          if (q) {
+            if (typeof q.prevClose === 'number' && q.prevClose > 0) {
+              stock.prevClose = q.prevClose;
             }
-            changed = true;
+            if (q.price && q.price !== stock.currentPrice) {
+              stock.prevTickPrice = stock.currentPrice;
+              stock.lastDiff = q.price - stock.currentPrice;
+              stock.currentPrice = q.price;
+              if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
+                stock.name = q.name;
+              }
+              changed = true;
+            }
           }
         } catch (e) {}
       }
@@ -1466,9 +1487,22 @@
     const nameEl = document.getElementById('view-stock-name');
     if (nameEl) nameEl.textContent = `${stock.name}`;
 
-    // 2. 目前價格 + 剛才跳動
+    // 2. 目前價格 (依台股規則：比昨收價漲=紅字 / 跌=綠字 / 平=白字)
     const priceEl = document.getElementById('view-current-price');
-    if (priceEl) priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
+    if (priceEl) {
+      priceEl.textContent = `$${stock.currentPrice.toLocaleString()} 元`;
+      if (typeof stock.prevClose === 'number' && stock.prevClose > 0) {
+        if (stock.currentPrice > stock.prevClose) {
+          priceEl.className = 'row-val val-current-price val-price-up';
+        } else if (stock.currentPrice < stock.prevClose) {
+          priceEl.className = 'row-val val-current-price val-price-down';
+        } else {
+          priceEl.className = 'row-val val-current-price val-price-flat';
+        }
+      } else {
+        priceEl.className = 'row-val val-current-price val-price-flat';
+      }
+    }
 
     // 3. 買入價格
     const buyPriceEl = document.getElementById('view-buy-price');
@@ -1510,6 +1544,143 @@
       }
     }
   }
+
+  // 首頁看板 7 大項目點擊獨立語音朗讀 (長輩無障礙大字與國/台語即時發音)
+  window.speakStockItem = function(fieldType) {
+    const elder = getActiveElder();
+    const isTw = (elder.language === 'taiwanese');
+    const stocks = elder.stocks || [];
+    const stock = stocks[currentStockIndex];
+    if (!stock) return;
+
+    const isProfit = (stock.currentPrice >= stock.buyPrice);
+    const profitDiff = Math.abs((stock.currentPrice - stock.buyPrice) * stock.shares);
+    const profitMoneyText = formatSeniorMoneyText(profitDiff);
+
+    const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
+    const targetDiff = Math.abs((stock.targetPrice - stock.buyPrice) * stock.shares);
+    const targetMoneyText = formatSeniorMoneyText(targetDiff);
+
+    const prevClose = (typeof stock.prevClose === 'number' && stock.prevClose > 0) ? stock.prevClose : null;
+
+    let text = '';
+
+    switch (fieldType) {
+      case 'name':
+        if (isTw) {
+          text = `股票名：${stock.name}。`;
+        } else {
+          text = `股票名稱：${stock.name}。`;
+        }
+        break;
+
+      case 'price':
+        if (prevClose !== null && prevClose > 0) {
+          const diff = Math.abs(stock.currentPrice - prevClose);
+          const diffStr = (diff % 1 === 0) ? diff.toString() : diff.toFixed(1);
+          if (stock.currentPrice > prevClose) {
+            if (isTw) {
+              text = `目前現價，${stock.currentPrice} 圓。比昨暝起價 ${diffStr} 圓！`;
+            } else {
+              text = `目前價格，${stock.currentPrice} 元。比昨天上漲 ${diffStr} 元！`;
+            }
+          } else if (stock.currentPrice < prevClose) {
+            if (isTw) {
+              text = `目前現價，${stock.currentPrice} 圓。比昨暝落價 ${diffStr} 圓。`;
+            } else {
+              text = `目前價格，${stock.currentPrice} 元。比昨天下跌 ${diffStr} 元。`;
+            }
+          } else {
+            if (isTw) {
+              text = `目前現價，${stock.currentPrice} 圓。今日平盤。`;
+            } else {
+              text = `目前價格，${stock.currentPrice} 元。今天平盤。`;
+            }
+          }
+        } else {
+          if (isTw) {
+            text = `目前現價，${stock.currentPrice} 圓。`;
+          } else {
+            text = `目前價格，${stock.currentPrice} 元。`;
+          }
+        }
+        break;
+
+      case 'buyPrice':
+        if (isTw) {
+          text = `買進價格，${stock.buyPrice} 圓。`;
+        } else {
+          text = `買入價格，${stock.buyPrice} 元。`;
+        }
+        break;
+
+      case 'shares':
+        const sheets = (stock.shares >= 1000) ? `${Math.floor(stock.shares / 1000)} 張` : '';
+        if (isTw) {
+          if (sheets) {
+            text = `買進數量，${sheets}，攏總 ${stock.shares} 股。`;
+          } else {
+            text = `買進數量，${stock.shares} 股。`;
+          }
+        } else {
+          if (sheets) {
+            text = `買入數量，${sheets}，共 ${stock.shares} 股。`;
+          } else {
+            text = `買入數量，${stock.shares} 股。`;
+          }
+        }
+        break;
+
+      case 'currentProfit':
+        if (isTw) {
+          const twMoney = profitMoneyText.replace(/元/g, '圓');
+          if (isProfit) {
+            text = `目前趁賠，目前趁 ${twMoney}！足讚喔！`;
+          } else {
+            text = `目前趁賠，目前稍微休息，差 ${twMoney}。免煩惱！`;
+          }
+        } else {
+          if (isProfit) {
+            text = `目前賺賠，目前賺 ${profitMoneyText}！很棒喔！`;
+          } else {
+            text = `目前賺賠，目前稍微拉回，差 ${profitMoneyText}。放寬心喔！`;
+          }
+        }
+        break;
+
+      case 'targetPrice':
+        if (isTw) {
+          text = `希望賣價，${stock.targetPrice} 圓。`;
+        } else {
+          text = `希望賣價，${stock.targetPrice} 元。`;
+        }
+        break;
+
+      case 'targetProfit':
+        if (isTw) {
+          const twTargetMoney = targetMoneyText.replace(/元/g, '圓');
+          if (isTargetProfit) {
+            text = `希望趁賠，預計趁 ${twTargetMoney}。`;
+          } else {
+            text = `希望趁賠，預計賠 ${twTargetMoney}。`;
+          }
+        } else {
+          if (isTargetProfit) {
+            text = `希望賺賠，預計賺 ${targetMoneyText}。`;
+          } else {
+            text = `希望賺賠，預計賠 ${targetMoneyText}。`;
+          }
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    if (text) {
+      Speech.speak(text);
+    }
+  };
 
   // 切換股票時之精準語音播報 (100% 依據螢幕顯示金額朗讀，絕不四捨五入簡化)
   function speakCurrentStockBrief() {
