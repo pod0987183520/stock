@@ -196,7 +196,8 @@
     cloudConfig: {
       provider: 'public_kv',
       customUrl: ''
-    }
+    },
+    gasApiUrl: ''
   };
 
   let AppState = loadAppState();
@@ -212,6 +213,9 @@
       }
       // 自動校正舊版硬編碼歷史過期價格與昨收價
       data.elders[k].stocks.forEach(stock => {
+        if (typeof stock.basePrice !== 'number' || stock.basePrice <= 0) {
+          stock.basePrice = stock.currentPrice;
+        }
         if (typeof stock.prevClose !== 'number' || stock.prevClose <= 0) {
           stock.prevClose = stock.currentPrice;
         }
@@ -484,12 +488,42 @@
   }
 
   // ==========================================
-  // 3. 台灣股市 100% 即時真實盤價行情引擎 (Realtime Stock Service)
-  // 四重高可用備援架構：Yahoo Finance 即時盤中(主線) -> FinMind近期盤價(次線) -> 證交所OpenAPI(備援) -> 基準字典庫(兜底)
+  // 3. 台股官方 6 階升降單位規範演算法 (TWSE Official Tick Size Engine)
+  // ==========================================
+  const TaiwanTickEngine = {
+    // 依據台灣證券交易所 (TWSE) 法定價格升降單位標準
+    getTickSize(price) {
+      if (price < 10) return 0.01;      // 未滿 10 元：升降 0.01 元
+      if (price < 50) return 0.05;      // 10 元至未滿 50 元：升降 0.05 元
+      if (price < 100) return 0.1;      // 50 元至未滿 100 元：升降 0.1 元
+      if (price < 500) return 0.5;      // 100 元至未滿 500 元：升降 0.5 元
+      if (price < 1000) return 1.0;     // 500 元至未滿 1000 元：升降 1.0 元
+      return 5.0;                       // 1000 元以上：升降 5.0 元 (如台積電)
+    },
+
+    // 根據基準價與跳動單位數計算新價格（消除浮點數誤差）
+    applyTicks(basePrice, ticks) {
+      if (!basePrice || isNaN(basePrice)) return 100;
+      const tickSize = this.getTickSize(basePrice);
+      const delta = ticks * tickSize;
+      const newPrice = Math.max(tickSize, basePrice + delta);
+
+      if (tickSize >= 1) return Math.round(newPrice);
+      if (tickSize === 0.5) return Math.round(newPrice * 2) / 2;
+      if (tickSize === 0.1) return Math.round(newPrice * 10) / 10;
+      if (tickSize === 0.05) return Math.round(newPrice * 20) / 20;
+      return Math.round(newPrice * 100) / 100;
+    }
+  };
+
+  // ==========================================
+  // 3.5 股票行情與擬真跳動引擎 (方法一: Google Sheets GAS + 前端擬真心跳)
   // ==========================================
   const RealtimeStockService = {
     cache: {},
     inFlight: {},
+    gasCache: null,
+    gasCacheTime: 0,
     twseCache: null,
     twseCacheTime: 0,
     isRefreshing: false,
@@ -550,14 +584,42 @@
       return `${y}-${m}-${day}`;
     },
 
-    // 取得單檔台股即時成交價與昨收價
+    // 從 Google Apps Script Web App 取得試算表中的官方即時行情
+    async fetchFromGAS() {
+      if (!AppState.gasApiUrl) return null;
+      if (this.gasCache && (Date.now() - this.gasCacheTime < 300000)) {
+        return this.gasCache;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(AppState.gasApiUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json && typeof json === 'object') {
+            this.gasCache = json;
+            this.gasCacheTime = Date.now();
+            console.log('[GAS API] 成功取得 Google 試算表最新行情:', json);
+            return json;
+          }
+        }
+      } catch (err) {
+        console.warn('[GAS API] 連線異常，啟用官方備援方案:', err.message);
+      }
+      return null;
+    },
+
+    // 取得單檔台股基準價格與昨收價
     async fetchQuote(rawCode) {
       if (!rawCode) return null;
       const code = rawCode.toString().trim().toUpperCase();
 
-      // 1. 檢查 15 秒內的記憶體快取
+      // 1. 檢查 30 秒內的記憶體快取
       const cached = this.cache[code];
-      if (cached && (Date.now() - cached.timestamp < 15000)) {
+      if (cached && (Date.now() - cached.timestamp < 30000)) {
         return cached.data;
       }
 
@@ -570,56 +632,26 @@
         let quote = null;
         let stockName = (TaiwanStockNames[code]) || (this.twseCache && this.twseCache[code]?.name) || `股票(${code})`;
 
-        // 策略 0: Yahoo Finance 1 分鐘線盤中即時行情 (優先取得每分真實跳動現價與昨收)
-        try {
-          const isOtc = ['6547', '8069', '5483', '6488', '3293', '8299', '5347', '3529'].includes(code);
-          const symbolsToTry = isOtc ? [`${code}.TWO`, `${code}.TW`] : [`${code}.TW`, `${code}.TWO`];
-          
-          for (const sym of symbolsToTry) {
-            if (quote) break;
-            const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1m&range=1d`;
-            const proxyUrls = [
-              `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-              `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (const pUrl of proxyUrls) {
-              try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2800);
-                const res = await fetch(pUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
-
-                if (res.ok) {
-                  const json = await res.json();
-                  const meta = json?.chart?.result?.[0]?.meta;
-                  if (meta && typeof meta.regularMarketPrice === 'number' && meta.regularMarketPrice > 0) {
-                    const price = meta.regularMarketPrice;
-                    const prevClose = (typeof meta.chartPreviousClose === 'number' && meta.chartPreviousClose > 0)
-                      ? meta.chartPreviousClose
-                      : (typeof meta.previousClose === 'number' && meta.previousClose > 0 ? meta.previousClose : price);
-
-                    if (stockName.startsWith('股票(') && this.twseCache && this.twseCache[code]?.name) {
-                      stockName = this.twseCache[code].name;
-                      TaiwanStockNames[code] = stockName;
-                    }
-
-                    quote = {
-                      id: code,
-                      name: stockName,
-                      price: price,
-                      prevClose: prevClose,
-                      source: 'yahoo-realtime'
-                    };
-                    break;
-                  }
-                }
-              } catch (err) {}
+        // 策略 1: Google 試算表 Apps Script API (方法一主要來源)
+        if (AppState.gasApiUrl) {
+          const gasData = await this.fetchFromGAS();
+          if (gasData && gasData[code]) {
+            const item = gasData[code];
+            const p = parseFloat(item.price);
+            const prev = parseFloat(item.prevClose) || p;
+            if (!isNaN(p) && p > 0) {
+              quote = {
+                id: code,
+                name: item.name || stockName,
+                price: p,
+                prevClose: prev,
+                source: 'google-sheets-gas'
+              };
             }
           }
-        } catch (e) {}
+        }
 
-        // 策略 1: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價，極速回傳)
+        // 策略 2: FinMind API (官方開放 CORS，動態抓取最近 10 天交易日成交價)
         if (!quote) {
           try {
             const startDate = this.getRecentStartDate(10);
@@ -656,7 +688,7 @@
           } catch (e) {}
         }
 
-        // 策略 2: 證交所 TWSE / 櫃買中心 TPEx 官方開放資料 OpenAPI 備援
+        // 策略 3: 證交所 TWSE / 櫃買中心 TPEx 官方開放資料 OpenAPI 備援
         if (!quote || quote.name.startsWith('股票(')) {
           try {
             if (!this.twseCache || (Date.now() - this.twseCacheTime > 600000)) {
@@ -704,7 +736,7 @@
           } catch (e) {}
         }
 
-        // 策略 3: 本地基準市價字典庫兜底 (離線/斷網/假日保障)
+        // 策略 4: 本地基準市價字典庫兜底 (離線/斷網/假日保障)
         if (!quote && TaiwanStockBasePrices[code]) {
           quote = {
             id: code,
@@ -727,8 +759,20 @@
       return queryPromise;
     },
 
-    // 批量刷新長輩自選股票
-    async refreshElderStocks(elder) {
+    // 觸發前端視覺紅漲綠跌閃爍特效
+    triggerPriceFlash(direction) {
+      const priceEl = document.getElementById('view-current-price');
+      if (!priceEl) return;
+      priceEl.classList.remove('price-flash-up', 'price-flash-down');
+      void priceEl.offsetWidth; // 強制重繪 (Reflow)
+      priceEl.classList.add(direction === 'up' ? 'price-flash-up' : 'price-flash-down');
+      setTimeout(() => {
+        if (priceEl) priceEl.classList.remove('price-flash-up', 'price-flash-down');
+      }, 1000);
+    },
+
+    // 批量刷新長輩自選股票的錨定基準價格 (長週期 15 分鐘 / 手動刷新)
+    async refreshElderBasePrices(elder) {
       if (!elder || elder.enabled === false || !elder.stocks || elder.stocks.length === 0) return false;
       let changed = false;
 
@@ -741,10 +785,11 @@
             if (typeof q.prevClose === 'number' && q.prevClose > 0) {
               stock.prevClose = q.prevClose;
             }
-            if (q.price && q.price !== stock.currentPrice) {
-              stock.prevTickPrice = stock.currentPrice;
-              stock.lastDiff = q.price - stock.currentPrice;
-              stock.currentPrice = q.price;
+            if (q.price) {
+              stock.basePrice = q.price;
+              if (!stock.currentPrice || stock.currentPrice <= 0) {
+                stock.currentPrice = q.price;
+              }
               if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
                 stock.name = q.name;
               }
@@ -757,19 +802,19 @@
       return changed;
     },
 
-    // 全局長輩股票即時同步 (含主動通知與防重疊保護)
+    // 長週期 (每 15 分鐘 / 開機 / 切回前台)：同步雲端錨定基準價
     async syncAllElderStocks(isUserTriggered = false) {
       if (this.isRefreshing) return;
       this.isRefreshing = true;
 
       try {
         const activeElder = getActiveElder();
-        let changed = await this.refreshElderStocks(activeElder);
+        let changed = await this.refreshElderBasePrices(activeElder);
 
         const otherId = (AppState.activeElderId === 'dad') ? 'mom' : 'dad';
         const otherElder = AppState.elders[otherId];
         if (otherElder && otherElder.enabled !== false) {
-          const otherChanged = await this.refreshElderStocks(otherElder);
+          const otherChanged = await this.refreshElderBasePrices(otherElder);
           if (otherChanged) {
             saveAppState();
             CloudSync.pushElder(otherId);
@@ -782,46 +827,92 @@
           renderAll();
         }
 
-        // 若啟用即時跳動語音且偵測到當前股票有價格變動
-        if (changed && AppState.tickVoiceEnabled && AppState.deviceRole === 'senior') {
-          const targetStock = activeElder.stocks && activeElder.stocks[currentStockIndex || 0];
-          if (targetStock && targetStock.lastDiff !== 0) {
-            speakPriceTickAlert(activeElder, targetStock, targetStock.lastDiff);
-          }
-        }
-
         this.lastRefreshTime = new Date();
       } catch (err) {
-        console.warn('[RealtimeStockService] 行情同步略過:', err);
+        console.warn('[RealtimeStockService] 基準行情同步略過:', err);
       } finally {
         this.isRefreshing = false;
       }
     },
 
-    // 啟動 30 秒自動輪詢、切換前台刷新與下拉手動刷新
-    initAutoRefresh() {
-      // 1. 開機立即刷新
-      this.syncAllElderStocks();
+    // 短週期 (每 15 秒)：依照台股官方升降單位 (Tick Size) 進行 -2 到 +2 擬真隨機跳動
+    performRealisticTickSimulation() {
+      const activeElder = getActiveElder();
+      if (!activeElder || activeElder.enabled === false || !activeElder.stocks || activeElder.stocks.length === 0) return;
 
-      // 2. 每 30 秒自動更新一次
+      let hasPriceMovement = false;
+
+      activeElder.stocks.forEach((stock, idx) => {
+        if (!stock.id) return;
+        const base = stock.basePrice || stock.currentPrice || 100;
+        
+        // 隨機產生 -2 到 +2 升降單位 (加權分佈：0佔35%, ±1佔45%, ±2佔20%)
+        const tickPool = [0, 0, 0, 1, -1, 1, -1, 2, -2];
+        const randomTicks = tickPool[Math.floor(Math.random() * tickPool.length)];
+        const simulatedPrice = TaiwanTickEngine.applyTicks(base, randomTicks);
+
+        if (simulatedPrice !== stock.currentPrice) {
+          const diff = simulatedPrice - stock.currentPrice;
+          stock.prevTickPrice = stock.currentPrice;
+          stock.currentPrice = simulatedPrice;
+          stock.lastDiff = diff;
+          hasPriceMovement = true;
+
+          // 若為當前首頁顯示的股票，觸發視覺紅漲綠跌閃爍特效
+          if (idx === (currentStockIndex || 0) && AppState.deviceRole === 'senior') {
+            this.triggerPriceFlash(diff > 0 ? 'up' : 'down');
+          }
+        }
+      });
+
+      if (hasPriceMovement) {
+        saveAppState();
+        renderAll();
+
+        // 語音播報連動
+        const currentStock = activeElder.stocks[currentStockIndex || 0];
+        if (AppState.tickVoiceEnabled && currentStock && currentStock.lastDiff !== 0 && AppState.deviceRole === 'senior') {
+          // 當跳動幅度顯著時才發聲提醒 (避免每 15 秒疲勞轟炸)
+          if (Math.abs(currentStock.lastDiff) >= TaiwanTickEngine.getTickSize(currentStock.currentPrice) * 2) {
+            speakPriceTickAlert(activeElder, currentStock, currentStock.lastDiff);
+          }
+        }
+      }
+    },
+
+    // 啟動 15 分鐘錨定同步 ＋ 15 秒擬真跳動 ＋ 下拉手動刷新
+    initAutoRefresh() {
+      // 1. 開機立即同步基準行情並啟動初次跳動
+      this.syncAllElderStocks(true);
+      setTimeout(() => this.performRealisticTickSimulation(), 2000);
+
+      // 2. 長週期：每 15 分鐘同步一次 Google 試算表 / 官方基準價
       setInterval(() => {
         this.syncAllElderStocks(false);
-      }, 30000);
+      }, 15 * 60 * 1000);
 
-      // 3. 切換前台/聚焦自動刷新
+      // 3. 短週期：每 15 秒執行一次台股官方規範擬真跳動
+      setInterval(() => {
+        this.performRealisticTickSimulation();
+      }, 15000);
+
+      // 4. 切換前台/聚焦自動刷新
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
           this.syncAllElderStocks(true);
+          this.performRealisticTickSimulation();
         }
       });
       window.addEventListener('focus', () => {
         this.syncAllElderStocks(true);
+        this.performRealisticTickSimulation();
       });
       window.addEventListener('pageshow', () => {
         this.syncAllElderStocks(true);
+        this.performRealisticTickSimulation();
       });
 
-      // 4. 手動下拉重新整理 (Pull-to-refresh)
+      // 5. 手動下拉重新整理 (Pull-to-refresh)
       let touchStartY = 0;
       window.addEventListener('touchstart', (e) => {
         if (window.scrollY <= 5) {
@@ -839,6 +930,7 @@
             if (navigator.vibrate) navigator.vibrate(30);
             this.showRefreshToast();
             this.syncAllElderStocks(true);
+            this.performRealisticTickSimulation();
           }
         }
       }, { passive: true });
@@ -2245,6 +2337,12 @@
     renderElderStocksEditor('mom', 'caregiver-stocks-editor-mom');
     renderElderStocksEditor('dad', 'caregiver-stocks-editor-dad');
 
+    // 方法一: Google 試算表 (GAS) API 網址
+    const gasInput = document.getElementById('setting-gas-api-url');
+    if (gasInput) {
+      gasInput.value = AppState.gasApiUrl || '';
+    }
+
     modal.classList.remove('hidden');
   };
 
@@ -2456,9 +2554,19 @@
       AppState.activeElderId = 'dad';
     }
 
+    // 儲存方法一: Google 試算表 (GAS) API 網址
+    const gasInput = document.getElementById('setting-gas-api-url');
+    const oldGasUrl = AppState.gasApiUrl;
+    AppState.gasApiUrl = gasInput ? gasInput.value.trim() : '';
+
     saveAppState();
     CloudSync.pushElder('dad');
     CloudSync.pushElder('mom');
+
+    if (AppState.gasApiUrl && AppState.gasApiUrl !== oldGasUrl) {
+      RealtimeStockService.gasCache = null;
+      RealtimeStockService.syncAllElderStocks(true);
+    }
 
     document.getElementById('modal-caregiver').classList.add('hidden');
     renderAll();

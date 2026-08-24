@@ -2459,3 +2459,48 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* 價格擬真跳動紅漲綠跌閃爍特效 */
+@keyframes priceFlashRed {
+  0% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+  30% {
+    transform: scale(1.08);
+    background-color: rgba(239, 68, 68, 0.35);
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+    text-shadow: none;
+  }
+}
+
+@keyframes priceFlashGreen {
+  0% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+  30% {
+    transform: scale(1.08);
+    background-color: rgba(16, 185, 129, 0.35);
+    text-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+    text-shadow: none;
+  }
+}
+
+.price-flash-up {
+  animation: priceFlashRed 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 8px;
+}
+
+.price-flash-down {
+  animation: priceFlashGreen 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 8px;
+}
