@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=3.02">
+  <link rel="stylesheet" href="css/style.css?v=3.03">
   <script>
     (function() {
       try {
@@ -89,9 +89,8 @@ AI互動陪伴.給予正向情緒價值">
         <span class="header-brand-title">小股同學</span>
       </div>
 
-      <!-- 頂端列右側按鈕群：國台語切換 + 安裝App 按鈕 + 齒輪設定 -->
+      <!-- 頂端列右側按鈕群：安裝App 按鈕 + 齒輪設定 -->
       <div class="header-actions">
-        <button id="btn-toggle-lang" class="btn-header-lang" title="切換國語/台語語音" onclick="toggleAppLanguage()">🗣️ 國語</button>
         <button id="btn-header-install" class="btn-header-install" title="將小股同學安裝至桌面" onclick="triggerPWAInstall()">📲 安裝App</button>
         <button id="btn-unlock-caregiver" class="btn-settings-gear" title="晚輩管理設定" onclick="openCaregiverModal()">⚙️</button>
       </div>
@@ -435,15 +434,6 @@ AI互動陪伴.給予正向情緒價值">
           </select>
         </div>
 
-        <!-- 語音聲道設定 -->
-        <div class="form-group">
-          <label class="form-label">🗣️ 語音陪伴聲道選擇：</label>
-          <select id="setting-language" class="form-input">
-            <option value="zh-TW">🗣️ 國語 (標準普通話)</option>
-            <option value="taiwanese">🎙️ 台語 (在地親切台語)</option>
-          </select>
-        </div>
-
         <!-- 雙長輩手機號碼綁定 (1 對 2 爸爸 / 媽媽) -->
         <div class="form-group dual-elder-group">
           <label class="form-label form-label-compact">👨 長輩一（如：爸爸）：</label>
@@ -487,11 +477,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=3.02"></script>
+  <script src="js/app.js?v=3.03"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.02')
+        navigator.serviceWorker.register('sw.js?v=3.03')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

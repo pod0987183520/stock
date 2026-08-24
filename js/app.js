@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.02 - 切換頁籤 4 大核心訊息播報・拔除錢字號與三角形純淨版)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.03 - 純標準國語發音・看板間距優化・頁尾巨字放大版)
  */
 
 (function () {
@@ -1545,10 +1545,9 @@
     }
   }
 
-  // 首頁看板 7 大項目點擊獨立語音朗讀 (長輩無障礙大字與國/台語即時發音)
+  // 首頁看板 7 大項目點擊獨立語音朗讀 (長輩無障礙大字與國語即時發音)
   window.speakStockItem = function(fieldType) {
     const elder = getActiveElder();
-    const isTw = (elder.language === 'taiwanese');
     const stocks = elder.stocks || [];
     const stock = stocks[currentStockIndex];
     if (!stock) return;
@@ -1567,11 +1566,7 @@
 
     switch (fieldType) {
       case 'name':
-        if (isTw) {
-          text = `股票名：${stock.name}。`;
-        } else {
-          text = `股票名稱：${stock.name}。`;
-        }
+        text = `股票名稱：${stock.name}。`;
         break;
 
       case 'price':
@@ -1579,97 +1574,47 @@
           const diff = Math.abs(stock.currentPrice - prevClose);
           const diffStr = (diff % 1 === 0) ? diff.toString() : diff.toFixed(1);
           if (stock.currentPrice > prevClose) {
-            if (isTw) {
-              text = `目前現價，${stock.currentPrice} 圓。比昨暝起價 ${diffStr} 圓！`;
-            } else {
-              text = `目前價格，${stock.currentPrice} 元。比昨天上漲 ${diffStr} 元！`;
-            }
+            text = `目前價格，${stock.currentPrice} 元。比昨天上漲 ${diffStr} 元！`;
           } else if (stock.currentPrice < prevClose) {
-            if (isTw) {
-              text = `目前現價，${stock.currentPrice} 圓。比昨暝落價 ${diffStr} 圓。`;
-            } else {
-              text = `目前價格，${stock.currentPrice} 元。比昨天下跌 ${diffStr} 元。`;
-            }
+            text = `目前價格，${stock.currentPrice} 元。比昨天下跌 ${diffStr} 元。`;
           } else {
-            if (isTw) {
-              text = `目前現價，${stock.currentPrice} 圓。今日平盤。`;
-            } else {
-              text = `目前價格，${stock.currentPrice} 元。今天平盤。`;
-            }
+            text = `目前價格，${stock.currentPrice} 元。今天平盤。`;
           }
         } else {
-          if (isTw) {
-            text = `目前現價，${stock.currentPrice} 圓。`;
-          } else {
-            text = `目前價格，${stock.currentPrice} 元。`;
-          }
+          text = `目前價格，${stock.currentPrice} 元。`;
         }
         break;
 
       case 'buyPrice':
-        if (isTw) {
-          text = `買進價格，${stock.buyPrice} 圓。`;
-        } else {
-          text = `買入價格，${stock.buyPrice} 元。`;
-        }
+        text = `買入價格，${stock.buyPrice} 元。`;
         break;
 
       case 'shares':
         const sheets = (stock.shares >= 1000) ? `${Math.floor(stock.shares / 1000)} 張` : '';
-        if (isTw) {
-          if (sheets) {
-            text = `買進數量，${sheets}，攏總 ${stock.shares} 股。`;
-          } else {
-            text = `買進數量，${stock.shares} 股。`;
-          }
+        if (sheets) {
+          text = `買入數量，${sheets}，共 ${stock.shares} 股。`;
         } else {
-          if (sheets) {
-            text = `買入數量，${sheets}，共 ${stock.shares} 股。`;
-          } else {
-            text = `買入數量，${stock.shares} 股。`;
-          }
+          text = `買入數量，${stock.shares} 股。`;
         }
         break;
 
       case 'currentProfit':
-        if (isTw) {
-          const twMoney = profitMoneyText.replace(/元/g, '圓');
-          if (isProfit) {
-            text = `目前趁賠，目前趁 ${twMoney}！足讚喔！`;
-          } else {
-            text = `目前趁賠，目前稍微休息，差 ${twMoney}。免煩惱！`;
-          }
+        if (isProfit) {
+          text = `目前賺賠，目前賺 ${profitMoneyText}！很棒喔！`;
         } else {
-          if (isProfit) {
-            text = `目前賺賠，目前賺 ${profitMoneyText}！很棒喔！`;
-          } else {
-            text = `目前賺賠，目前稍微拉回，差 ${profitMoneyText}。放寬心喔！`;
-          }
+          text = `目前賺賠，目前稍微拉回，差 ${profitMoneyText}。放寬心喔！`;
         }
         break;
 
       case 'targetPrice':
-        if (isTw) {
-          text = `希望賣價，${stock.targetPrice} 圓。`;
-        } else {
-          text = `希望賣價，${stock.targetPrice} 元。`;
-        }
+        text = `希望賣價，${stock.targetPrice} 元。`;
         break;
 
       case 'targetProfit':
-        if (isTw) {
-          const twTargetMoney = targetMoneyText.replace(/元/g, '圓');
-          if (isTargetProfit) {
-            text = `希望趁賠，預計趁 ${twTargetMoney}。`;
-          } else {
-            text = `希望趁賠，預計賠 ${twTargetMoney}。`;
-          }
+        if (isTargetProfit) {
+          text = `希望賺賠，預計賺 ${targetMoneyText}。`;
         } else {
-          if (isTargetProfit) {
-            text = `希望賺賠，預計賺 ${targetMoneyText}。`;
-          } else {
-            text = `希望賺賠，預計賠 ${targetMoneyText}。`;
-          }
+          text = `希望賺賠，預計賠 ${targetMoneyText}。`;
         }
         break;
 
@@ -1685,16 +1630,10 @@
   // 切換股票時之精準語音播報 (依序播報長輩最想聽到的 4 個核心訊息：①股票名稱 ②目前價格 ③買入價格 ④希望賣價)
   function speakCurrentStockBrief() {
     const elder = getActiveElder();
-    const isTw = (elder.language === 'taiwanese');
     const stock = elder.stocks[currentStockIndex];
     if (!stock) return;
 
-    let text = '';
-    if (isTw) {
-      text = `切換到${stock.name}。目前現價 ${stock.currentPrice} 圓，買進價格 ${stock.buyPrice} 圓，希望賣價 ${stock.targetPrice} 圓。`;
-    } else {
-      text = `切換到${stock.name}。目前價格 ${stock.currentPrice} 元，買入價格 ${stock.buyPrice} 元，希望賣價 ${stock.targetPrice} 元。`;
-    }
+    const text = `切換到${stock.name}。目前價格 ${stock.currentPrice} 元，買入價格 ${stock.buyPrice} 元，希望賣價 ${stock.targetPrice} 元。`;
     Speech.speak(text);
   }
 
