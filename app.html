@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=3.04">
+  <link rel="stylesheet" href="css/style.css?v=3.05">
   <script>
     (function() {
       try {
@@ -424,50 +424,48 @@ AI互動陪伴.給予正向情緒價值">
           </div>
         </div>
 
-        <!-- 運作模式設定 -->
-        <div class="form-group">
-          <label class="form-label">🎯 關懷模式選擇：</label>
-          <select id="setting-app-mode" class="form-input">
-            <option value="family">🏠 家庭晚輩陪伴模式 (推薦)</option>
-            <option value="simulation">🎮 模擬大亨遊戲模式 (虛擬100萬)</option>
-            <option value="self">👴 獨立長者 / 營業員模式</option>
-          </select>
-        </div>
-
-        <!-- 雙長輩手機號碼綁定 (1 對 2 爸爸 / 媽媽) -->
-        <div class="form-group dual-elder-group">
-          <label class="form-label form-label-compact">👨 長輩一（如：爸爸）：</label>
-          <div class="input-row">
-            <input type="text" id="setting-dad-title" class="form-input title-input-compact" placeholder="稱謂" value="爸爸">
-            <input type="tel" id="setting-dad-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0912345678)" value="0912345678">
+        <!-- 長輩一設定區塊 (包含啟用 Checkbox + 稱謂電話 + 專屬股票最多2檔) -->
+        <div class="elder-config-card" id="config-card-dad">
+          <div class="elder-config-header">
+            <label class="checkbox-label-senior">
+              <input type="checkbox" id="setting-dad-enable" class="custom-checkbox" checked onchange="toggleElderSection('dad')">
+              <span class="elder-config-title">👨 啟用長輩一 (如：爸爸)</span>
+            </label>
+          </div>
+          <div class="elder-config-content" id="config-content-dad">
+            <div class="input-row" style="margin-bottom: 8px;">
+              <input type="text" id="setting-dad-title" class="form-input title-input-compact" placeholder="稱謂" value="爸爸">
+              <input type="tel" id="setting-dad-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0912345678)" value="0912345678">
+            </div>
+            <div class="form-label-mini">📈 長輩一專屬自選股票 (最多 2 檔)：</div>
+            <div id="caregiver-stocks-editor-dad" class="stocks-editor-list"></div>
           </div>
         </div>
 
-        <div class="form-group dual-elder-group">
-          <label class="form-label form-label-compact">👩 長輩二（如：媽媽）：</label>
-          <div class="input-row">
-            <input type="text" id="setting-mom-title" class="form-input title-input-compact" placeholder="稱謂" value="媽媽">
-            <input type="tel" id="setting-mom-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0928111222)" value="0928111222">
+        <!-- 長輩二設定區塊 (包含啟用 Checkbox + 稱謂電話 + 專屬股票最多2檔) -->
+        <div class="elder-config-card" id="config-card-mom">
+          <div class="elder-config-header">
+            <label class="checkbox-label-senior">
+              <input type="checkbox" id="setting-mom-enable" class="custom-checkbox" checked onchange="toggleElderSection('mom')">
+              <span class="elder-config-title">👩 啟用長輩二 (如：媽媽)</span>
+            </label>
           </div>
-          <p class="form-hint">💡 晚輩在首頁可隨時一鍵切換爸爸與媽媽，長輩端手機輸入各自號碼即自動連線專屬資料。</p>
+          <div class="elder-config-content" id="config-content-mom">
+            <div class="input-row" style="margin-bottom: 8px;">
+              <input type="text" id="setting-mom-title" class="form-input title-input-compact" placeholder="稱謂" value="媽媽">
+              <input type="tel" id="setting-mom-phone" class="form-input phone-input-expanded" placeholder="手機號碼 (如：0928111222)" value="0928111222">
+            </div>
+            <div class="form-label-mini">📈 長輩二專屬自選股票 (最多 2 檔)：</div>
+            <div id="caregiver-stocks-editor-mom" class="stocks-editor-list"></div>
+          </div>
         </div>
 
-        <!-- 聯絡人 -->
-        <div class="form-group">
-          <label class="form-label form-label-compact">📱 達標時一鍵撥打：</label>
+        <!-- 達標時一鍵撥打 (長輩一與長輩二共用晚輩聯絡人) -->
+        <div class="form-group" style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 12px; margin-top: 10px;">
+          <label class="form-label form-label-compact" style="color: #38BDF8; font-weight: 800;">📱 達標時一鍵撥打晚輩聯絡人 (共用)：</label>
           <div class="input-row">
-            <input type="text" id="setting-contact-name" class="form-input title-input-compact" placeholder="聯絡人">
-            <input type="tel" id="setting-contact-phone" class="form-input phone-input-expanded" placeholder="電話號碼 (如：0987654321)">
-          </div>
-        </div>
-
-        
-
-                <!-- 股票清單編輯區 (最多2檔) -->
-        <div class="form-group">
-          <label class="form-label">📈 目前選取長輩之自選股票設定 (最多2檔)：</label>
-          <div id="caregiver-stocks-editor" class="stocks-editor-list">
-            <!-- 動態渲染股票編輯欄位 -->
+            <input type="text" id="setting-contact-name" class="form-input title-input-compact" placeholder="稱呼 (如: 兒子)" value="小明 (兒子)">
+            <input type="tel" id="setting-contact-phone" class="form-input phone-input-expanded" placeholder="電話號碼 (如：0987654321)" value="0987654321">
           </div>
         </div>
 
@@ -477,11 +475,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=3.04"></script>
+  <script src="js/app.js?v=3.05"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.04')
+        navigator.serviceWorker.register('sw.js?v=3.05')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

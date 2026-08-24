@@ -2142,6 +2142,58 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* 雙長輩獨立設定卡片 (含啟用 Checkbox + 專屬股票清單) */
+.elder-config-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid rgba(56, 189, 248, 0.35);
+  border-radius: 16px;
+  padding: 14px 14px;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+}
+
+.elder-config-card.is-disabled {
+  opacity: 0.45;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.elder-config-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.checkbox-label-senior {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-checkbox {
+  width: 26px;
+  height: 26px;
+  accent-color: #38BDF8;
+  cursor: pointer;
+}
+
+.elder-config-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #FEF08A;
+}
+
+.form-label-mini {
+  font-size: 16px;
+  font-weight: 800;
+  color: #94A3B8;
+  margin: 8px 0 6px 0;
+}
+
 .stock-edit-item {
   background: #0F172A;
   border: 1px solid rgba(56, 189, 248, 0.25);

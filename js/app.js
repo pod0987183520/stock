@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.04 - 賺賠金額四捨五入至百位・股數中文朗讀一千股/一千二百二十五股)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.05 - 雙長輩啟用開關・獨立自選股票配置・共用達標聯絡人)
  */
 
 (function () {
@@ -77,6 +77,7 @@
     tickVoiceEnabled: true, // 動態語音分時跳動播報開關
     elders: {
       dad: {
+        enabled: true,
         title: '爸爸',
         phone: '0912345678',
         mode: 'family',
@@ -135,42 +136,41 @@
         pendingEnvelope: null
       },
       mom: {
+        enabled: true,
         title: '媽媽',
         phone: '0928111222',
-        mode: 'family',
         contactName: '小明 (兒子)',
         contactPhone: '0987654321',
         voiceRate: 0.85,
         nightModeEnabled: true,
-        language: 'zh-TW',
         stocks: [
           {
-            id: '2886',
-            name: '兆豐金',
-            buyPrice: 38,
-            shares: 5000,
-            currentPrice: 42,
-            prevClose: 41.5,
-            prevTickPrice: 42,
+            id: '2317',
+            name: '鴻海',
+            buyPrice: 180,
+            shares: 2000,
+            currentPrice: 205,
+            prevClose: 202,
+            prevTickPrice: 205,
             lastDiff: 0,
-            targetPrice: 45,
-            marketTrend: '溫和上揚',
+            targetPrice: 230,
+            marketTrend: '強勢上漲',
             newsSentiment: '正面',
-            aiAdvice: '媽媽，兆豐金配息很穩定，今年獲利也很好，安心存股喔！'
+            aiAdvice: '媽媽，鴻海表現很棒喔！'
           },
           {
-            id: '0056',
-            name: '元大高股息',
-            buyPrice: 35,
-            shares: 4000,
-            currentPrice: 38,
-            prevClose: 38.2,
-            prevTickPrice: 38,
+            id: '0050',
+            name: '元大台灣50',
+            buyPrice: 185,
+            shares: 2000,
+            currentPrice: 190,
+            prevClose: 190,
+            prevTickPrice: 190,
             lastDiff: 0,
-            targetPrice: 40,
-            marketTrend: '高息抗跌',
-            newsSentiment: '正面',
-            aiAdvice: '媽媽，0056 每年領分紅給您加菜買水果最合適了！'
+            targetPrice: 210,
+            marketTrend: '平穩向上',
+            newsSentiment: '平淡',
+            aiAdvice: '媽媽，0050是台灣最強的大型龍頭股集合，最安心了！'
           }
         ],
         pocketMoney: {
@@ -1240,6 +1240,13 @@
   // ==========================================
   const CaregiverDashboard = {
     render() {
+      // 若當前長輩未啟用，自動切換至啟用的長輩
+      if (AppState.elders.dad && AppState.elders.dad.enabled === false && AppState.elders.mom && AppState.elders.mom.enabled) {
+        AppState.activeElderId = 'mom';
+      } else if (AppState.elders.mom && AppState.elders.mom.enabled === false && AppState.elders.dad && AppState.elders.dad.enabled !== false) {
+        AppState.activeElderId = 'dad';
+      }
+
       const activeKey = AppState.activeElderId || 'dad';
       const elder = AppState.elders[activeKey];
       if (!elder) return;
@@ -1249,11 +1256,20 @@
       const dadTitleEl = document.getElementById('tab-dad-title');
       const momTitleEl = document.getElementById('tab-mom-title');
 
+      const isDadEnabled = (AppState.elders.dad.enabled !== false);
+      const isMomEnabled = (AppState.elders.mom.enabled === true);
+
       if (dadTitleEl) dadTitleEl.textContent = AppState.elders.dad.title || '爸爸';
       if (momTitleEl) momTitleEl.textContent = AppState.elders.mom.title || '媽媽';
 
-      if (tabDad) tabDad.className = `btn-elder-tab ${activeKey === 'dad' ? 'active' : ''}`;
-      if (tabMom) tabMom.className = `btn-elder-tab ${activeKey === 'mom' ? 'active' : ''}`;
+      if (tabDad) {
+        tabDad.style.display = isDadEnabled ? 'inline-flex' : 'none';
+        tabDad.className = `btn-elder-tab ${activeKey === 'dad' ? 'active' : ''}`;
+      }
+      if (tabMom) {
+        tabMom.style.display = isMomEnabled ? 'inline-flex' : 'none';
+        tabMom.className = `btn-elder-tab ${activeKey === 'mom' ? 'active' : ''}`;
+      }
 
       const headlineEl = document.getElementById('cg-elder-headline');
       const phoneBadge = document.getElementById('cg-elder-phone-badge');
@@ -2054,6 +2070,19 @@
     };
   }
 
+  window.toggleElderSection = function(elderKey) {
+    const chk = document.getElementById(`setting-${elderKey}-enable`);
+    const card = document.getElementById(`config-card-${elderKey}`);
+    const isChecked = chk ? chk.checked : true;
+    if (card) {
+      if (isChecked) {
+        card.classList.remove('is-disabled');
+      } else {
+        card.classList.add('is-disabled');
+      }
+    }
+  };
+
   window.openCaregiverModal = function openCaregiverModal() {
     const modal = document.getElementById('modal-caregiver');
     if (!modal) return;
@@ -2063,38 +2092,49 @@
       r.checked = (r.value === AppState.deviceRole);
     });
 
+    const dadChk = document.getElementById('setting-dad-enable');
+    if (dadChk) dadChk.checked = (AppState.elders.dad.enabled !== false);
+    const momChk = document.getElementById('setting-mom-enable');
+    if (momChk) momChk.checked = (AppState.elders.mom.enabled === true);
+
+    toggleElderSection('dad');
+    toggleElderSection('mom');
+
     document.getElementById('setting-dad-title').value = AppState.elders.dad.title || '爸爸';
     document.getElementById('setting-dad-phone').value = AppState.elders.dad.phone || '0912345678';
     document.getElementById('setting-mom-title').value = AppState.elders.mom.title || '媽媽';
     document.getElementById('setting-mom-phone').value = AppState.elders.mom.phone || '0928111222';
 
+    // 達標晚輩聯絡人 (共用)
     const currentElder = getActiveElder();
-    document.getElementById('setting-app-mode').value = currentElder.mode || 'family';
-    const langSelect = document.getElementById('setting-language');
-    if (langSelect) langSelect.value = currentElder.language || 'zh-TW';
-    document.getElementById('setting-contact-name').value = currentElder.contactName || '小明';
-    document.getElementById('setting-contact-phone').value = currentElder.contactPhone || '0987654321';
+    const contactName = currentElder.contactName || (AppState.sharedContact && AppState.sharedContact.name) || '小明 (兒子)';
+    const contactPhone = currentElder.contactPhone || (AppState.sharedContact && AppState.sharedContact.phone) || '0987654321';
+    document.getElementById('setting-contact-name').value = contactName;
+    document.getElementById('setting-contact-phone').value = contactPhone;
 
-    renderCaregiverStocksEditor();
+    renderElderStocksEditor('dad', 'caregiver-stocks-editor-dad');
+    renderElderStocksEditor('mom', 'caregiver-stocks-editor-mom');
+
     modal.classList.remove('hidden');
-  }
+  };
 
-  function renderCaregiverStocksEditor() {
-    const editorList = document.getElementById('caregiver-stocks-editor');
+  function renderElderStocksEditor(elderKey, containerId) {
+    const editorList = document.getElementById(containerId);
     if (!editorList) return;
     editorList.innerHTML = '';
-    const elder = getActiveElder();
+    const elder = AppState.elders[elderKey];
+    if (!elder) return;
 
     // 嚴格限制最多 2 檔股票
     const stocksToRender = (elder.stocks || []).slice(0, 2);
     while (stocksToRender.length < 2) {
       stocksToRender.push({
-        id: stocksToRender.length === 0 ? '2330' : '2412',
-        name: stocksToRender.length === 0 ? '台積電' : '中華電',
-        buyPrice: stocksToRender.length === 0 ? 850 : 120,
-        shares: stocksToRender.length === 0 ? 1000 : 3000,
-        currentPrice: stocksToRender.length === 0 ? 2410 : 136.5,
-        targetPrice: stocksToRender.length === 0 ? 2600 : 145
+        id: (stocksToRender.length === 0 ? (elderKey === 'dad' ? '2330' : '2317') : (elderKey === 'dad' ? '2412' : '0050')),
+        name: (stocksToRender.length === 0 ? (elderKey === 'dad' ? '台積電' : '鴻海') : (elderKey === 'dad' ? '中華電' : '元大台灣50')),
+        buyPrice: stocksToRender.length === 0 ? (elderKey === 'dad' ? 850 : 180) : (elderKey === 'dad' ? 120 : 185),
+        shares: stocksToRender.length === 0 ? 1000 : 2000,
+        currentPrice: stocksToRender.length === 0 ? (elderKey === 'dad' ? 2410 : 205) : (elderKey === 'dad' ? 136.5 : 190),
+        targetPrice: stocksToRender.length === 0 ? (elderKey === 'dad' ? 2600 : 230) : (elderKey === 'dad' ? 145 : 210)
       });
     }
     elder.stocks = stocksToRender;
@@ -2109,29 +2149,29 @@
         <div class="stock-edit-row">
           <div class="field-box field-id">
             <span class="field-mini-label">股票代號 (輸入即自動對應)</span>
-            <input type="text" class="form-input stock-edit-id" data-index="${idx}" value="${stock.id}" placeholder="如: 2344" autocomplete="off">
+            <input type="text" class="form-input stock-edit-id" data-elder="${elderKey}" data-index="${idx}" value="${stock.id}" placeholder="如: 2344" autocomplete="off">
           </div>
           <div class="field-box field-name">
             <span class="field-mini-label">股票名稱 (自動帶入・唯讀)</span>
-            <input type="text" class="form-input stock-edit-name input-locked" data-index="${idx}" value="${stock.name}" placeholder="自動帶入" readonly tabindex="-1">
+            <input type="text" class="form-input stock-edit-name input-locked" data-elder="${elderKey}" data-index="${idx}" value="${stock.name}" placeholder="自動帶入" readonly tabindex="-1">
           </div>
         </div>
         <div class="stock-edit-row-4">
           <div class="field-box">
             <span class="field-mini-label">買入價格 (可輸入)</span>
-            <input type="number" class="form-input stock-edit-buy" data-index="${idx}" value="${stock.buyPrice}" placeholder="買價">
+            <input type="number" class="form-input stock-edit-buy" data-elder="${elderKey}" data-index="${idx}" value="${stock.buyPrice}" placeholder="買價">
           </div>
           <div class="field-box">
             <span class="field-mini-label">買入數量 (可輸入)</span>
-            <input type="number" class="form-input stock-edit-shares" data-index="${idx}" value="${stock.shares}" placeholder="股數">
+            <input type="number" class="form-input stock-edit-shares" data-elder="${elderKey}" data-index="${idx}" value="${stock.shares}" placeholder="股數">
           </div>
           <div class="field-box">
             <span class="field-mini-label">目前價格 (自動帶入・唯讀)</span>
-            <input type="number" class="form-input stock-edit-current input-locked" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價" readonly tabindex="-1">
+            <input type="number" class="form-input stock-edit-current input-locked" data-elder="${elderKey}" data-index="${idx}" value="${stock.currentPrice}" placeholder="現價" readonly tabindex="-1">
           </div>
           <div class="field-box">
             <span class="field-mini-label">希望賣價 (可輸入)</span>
-            <input type="number" class="form-input stock-edit-target" data-index="${idx}" value="${stock.targetPrice || Math.round(stock.buyPrice * 1.15)}" placeholder="希望賣價">
+            <input type="number" class="form-input stock-edit-target" data-elder="${elderKey}" data-index="${idx}" value="${stock.targetPrice || Math.round(stock.buyPrice * 1.15)}" placeholder="希望賣價">
           </div>
         </div>
       `;
@@ -2195,40 +2235,57 @@
     const selectedRole = document.querySelector('input[name="deviceRole"]:checked').value;
     AppState.deviceRole = selectedRole;
 
+    const dadChk = document.getElementById('setting-dad-enable');
+    AppState.elders.dad.enabled = dadChk ? dadChk.checked : true;
     AppState.elders.dad.title = document.getElementById('setting-dad-title').value || '爸爸';
     AppState.elders.dad.phone = document.getElementById('setting-dad-phone').value || '0912345678';
+
+    const momChk = document.getElementById('setting-mom-enable');
+    AppState.elders.mom.enabled = momChk ? momChk.checked : false;
     AppState.elders.mom.title = document.getElementById('setting-mom-title').value || '媽媽';
     AppState.elders.mom.phone = document.getElementById('setting-mom-phone').value || '0928111222';
 
-    const currentElder = getActiveElder();
-    currentElder.mode = document.getElementById('setting-app-mode').value;
-    const langSelect = document.getElementById('setting-language');
-    if (langSelect) currentElder.language = langSelect.value;
-    currentElder.contactName = document.getElementById('setting-contact-name').value;
-    currentElder.contactPhone = document.getElementById('setting-contact-phone').value;
+    // 儲存共用聯絡人
+    const contactName = document.getElementById('setting-contact-name').value || '小明 (兒子)';
+    const contactPhone = document.getElementById('setting-contact-phone').value || '0987654321';
+    AppState.sharedContact = { name: contactName, phone: contactPhone };
+    AppState.elders.dad.contactName = contactName;
+    AppState.elders.dad.contactPhone = contactPhone;
+    AppState.elders.mom.contactName = contactName;
+    AppState.elders.mom.contactPhone = contactPhone;
 
-    const names = document.querySelectorAll('.stock-edit-name');
-    const ids = document.querySelectorAll('.stock-edit-id');
-    const buys = document.querySelectorAll('.stock-edit-buy');
-    const shares = document.querySelectorAll('.stock-edit-shares');
-    const currents = document.querySelectorAll('.stock-edit-current');
-    const targets = document.querySelectorAll('.stock-edit-target');
+    // 儲存長輩一（dad）與長輩二（mom）專屬股票
+    const extractStocks = (elderKey) => {
+      const ids = document.querySelectorAll(`.stock-edit-id[data-elder="${elderKey}"]`);
+      const names = document.querySelectorAll(`.stock-edit-name[data-elder="${elderKey}"]`);
+      const buys = document.querySelectorAll(`.stock-edit-buy[data-elder="${elderKey}"]`);
+      const shares = document.querySelectorAll(`.stock-edit-shares[data-elder="${elderKey}"]`);
+      const currents = document.querySelectorAll(`.stock-edit-current[data-elder="${elderKey}"]`);
+      const targets = document.querySelectorAll(`.stock-edit-target[data-elder="${elderKey}"]`);
+      const stocks = [];
+      ids.forEach((el, i) => {
+        if (i < 2) {
+          stocks.push({
+            id: el.value.trim() || (i === 0 ? (elderKey === 'dad' ? '2330' : '2317') : (elderKey === 'dad' ? '2412' : '0050')),
+            name: (names[i] && names[i].value) ? names[i].value : (i === 0 ? (elderKey === 'dad' ? '台積電' : '鴻海') : (elderKey === 'dad' ? '中華電' : '元大台灣50')),
+            buyPrice: (buys[i] && parseFloat(buys[i].value)) || 100,
+            shares: (shares[i] && parseInt(shares[i].value)) || 1000,
+            currentPrice: (currents[i] && parseFloat(currents[i].value)) || 100,
+            targetPrice: (targets[i] && parseFloat(targets[i].value)) || 120
+          });
+        }
+      });
+      return stocks;
+    };
 
-    const newStocks = [];
-    ids.forEach((el, i) => {
-      if (i < 2) { // 限制最多2檔
-        newStocks.push({
-          id: el.value.trim() || (i === 0 ? '2330' : '2412'),
-          name: (names[i] && names[i].value) ? names[i].value : (i === 0 ? '台積電' : '中華電'),
-          buyPrice: (buys[i] && parseFloat(buys[i].value)) || 100,
-          shares: (shares[i] && parseInt(shares[i].value)) || 1000,
-          currentPrice: (currents[i] && parseFloat(currents[i].value)) || 100,
-          targetPrice: (targets[i] && parseFloat(targets[i].value)) || 120
-        });
-      }
-    });
+    AppState.elders.dad.stocks = extractStocks('dad');
+    AppState.elders.mom.stocks = extractStocks('mom');
 
-    currentElder.stocks = newStocks;
+    if (!AppState.elders.dad.enabled && AppState.elders.mom.enabled) {
+      AppState.activeElderId = 'mom';
+    } else if (!AppState.elders.mom.enabled && AppState.elders.dad.enabled) {
+      AppState.activeElderId = 'dad';
+    }
 
     saveAppState();
     CloudSync.pushElder('dad');
@@ -2237,7 +2294,7 @@
     document.getElementById('modal-caregiver').classList.add('hidden');
     renderAll();
     alert('✅ 設定已儲存並同步至雲端！');
-  }
+  };
 
   // ==========================================
   // 12. 事件綁定與初始化
