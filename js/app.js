@@ -219,9 +219,10 @@
         if (typeof stock.prevClose !== 'number' || stock.prevClose <= 0) {
           stock.prevClose = stock.currentPrice;
         }
-        if (stock.id === '2344' && (stock.currentPrice < 100 || stock.currentPrice === 28.5)) {
-          stock.currentPrice = 181.0;
-          stock.prevClose = 179.0;
+        if (stock.id === '2344' && (stock.currentPrice < 100 || stock.currentPrice === 28.5 || stock.currentPrice === 181.0)) {
+          stock.currentPrice = 177.0;
+          stock.prevClose = 181.0;
+          stock.basePrice = 177.0;
         }
         if (stock.id === '2330') {
           if (stock.currentPrice < 1500 || stock.currentPrice === 980) {
@@ -834,9 +835,7 @@
             }
             if (q.price) {
               stock.basePrice = q.price;
-              if (!stock.currentPrice || stock.currentPrice <= 0) {
-                stock.currentPrice = q.price;
-              }
+              stock.currentPrice = q.price;
               if (q.name && (!stock.name || stock.name.startsWith('股票('))) {
                 stock.name = q.name;
               }
