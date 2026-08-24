@@ -1,6 +1,6 @@
 /**
  * 小股同學 - 我的股票 (防失智長者股票認知訓練與資產關懷 PWA)
- * 核心業務與互動邏輯 (All-in-One Engine v3.03 - 純標準國語發音・看板間距優化・頁尾巨字放大版)
+ * 核心業務與互動邏輯 (All-in-One Engine v3.04 - 賺賠金額四捨五入至百位・股數中文朗讀一千股/一千二百二十五股)
  */
 
 (function () {
@@ -1401,42 +1401,94 @@
   }
 
   
-  // 長輩超白話金額精確格式化 (例: 48,800 -> 4萬8千8百元 / 139,000 -> 13萬9千元 / 150,000 -> 15萬元，不四捨五入)
+  // 中文口語數字轉音 (例: 1000 -> 一千 / 1225 -> 一千二百二十五 / 3000 -> 三千，避免念成一零零零)
+  function formatNumberToChineseSpeech(num) {
+    num = Math.floor(Math.abs(num));
+    if (num === 0) return '零';
+    
+    const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    
+    if (num < 10) return digits[num];
+    if (num < 20) return (num === 10 ? '十' : '十' + digits[num % 10]);
+    if (num < 100) {
+      const shi = Math.floor(num / 10);
+      const ge = num % 10;
+      return digits[shi] + '十' + (ge > 0 ? digits[ge] : '');
+    }
+    if (num < 1000) {
+      const bai = Math.floor(num / 100);
+      const rem = num % 100;
+      const shi = Math.floor(rem / 10);
+      const ge = rem % 10;
+      let str = digits[bai] + '百';
+      if (rem > 0) {
+        if (shi === 0) {
+          str += '零' + digits[ge];
+        } else {
+          str += digits[shi] + '十' + (ge > 0 ? digits[ge] : '');
+        }
+      }
+      return str;
+    }
+    if (num < 10000) {
+      const qian = Math.floor(num / 1000);
+      const rem = num % 1000;
+      const bai = Math.floor(rem / 100);
+      const rem2 = rem % 100;
+      const shi = Math.floor(rem2 / 10);
+      const ge = rem2 % 10;
+      let str = digits[qian] + '千';
+      if (rem > 0) {
+        if (bai === 0) {
+          str += '零';
+          if (shi > 0) {
+            str += digits[shi] + '十' + (ge > 0 ? digits[ge] : '');
+          } else if (ge > 0) {
+            str += digits[ge];
+          }
+        } else {
+          str += digits[bai] + '百';
+          if (rem2 > 0) {
+            if (shi === 0) {
+              str += '零' + digits[ge];
+            } else {
+              str += digits[shi] + '十' + (ge > 0 ? digits[ge] : '');
+            }
+          }
+        }
+      }
+      return str;
+    }
+    if (num >= 10000) {
+      const wan = Math.floor(num / 10000);
+      const rem = num % 10000;
+      return formatNumberToChineseSpeech(wan) + '萬' + (rem > 0 ? formatNumberToChineseSpeech(rem) : '');
+    }
+    return String(num);
+  }
+
+  // 長輩超白話金額格式化 (四捨五入至百位，去除冗長個位/十位數，例: 139,480 -> 13萬9千5百元 / 48,820 -> 4萬8千8百元 / 1,560,000 -> 156萬元)
   function formatSeniorMoneyText(num) {
-    num = Math.abs(Math.round(num));
+    num = Math.abs(Math.round(num / 100) * 100);
     if (num >= 10000) {
       const wan = Math.floor(num / 10000);
       const rem = num % 10000;
       const qian = Math.floor(rem / 1000);
       const bai = Math.floor((rem % 1000) / 100);
-      const shi = Math.floor((rem % 100) / 10);
-      const ge = rem % 10;
       let str = `${wan}萬`;
       if (qian > 0) str += `${qian}千`;
       if (bai > 0) str += `${bai}百`;
-      if (shi > 0) str += `${shi}十`;
-      if (ge > 0) str += `${ge}`;
       return str + '元';
     } else if (num >= 1000) {
       const qian = Math.floor(num / 1000);
       const rem = num % 1000;
       const bai = Math.floor(rem / 100);
-      const shi = Math.floor((rem % 100) / 10);
-      const ge = rem % 10;
       let str = `${qian}千`;
       if (bai > 0) str += `${bai}百`;
-      if (shi > 0) str += `${shi}十`;
-      if (ge > 0) str += `${ge}`;
       return str + '元';
     } else if (num >= 100) {
       const bai = Math.floor(num / 100);
-      const rem = num % 100;
-      const shi = Math.floor(rem / 10);
-      const ge = rem % 10;
-      let str = `${bai}百`;
-      if (shi > 0) str += `${shi}十`;
-      if (ge > 0) str += `${ge}`;
-      return str + '元';
+      return `${bai}百元`;
     } else {
       return `${num}元`;
     }
@@ -1508,14 +1560,14 @@
     const buyPriceEl = document.getElementById('view-buy-price');
     if (buyPriceEl) buyPriceEl.textContent = `${stock.buyPrice.toLocaleString()} 元`;
 
-    // 4. 買入數量
+    // 4. 買入數量 (畫面維持純數字呈現)
     const sharesEl = document.getElementById('view-shares');
     if (sharesEl) {
       const sheets = (stock.shares >= 1000) ? `${stock.shares / 1000} 張 ` : '';
       sharesEl.textContent = `${sheets}(${stock.shares.toLocaleString()} 股)`;
     }
 
-    // 5. 目前賺賠 (台灣股市規範：賺=紅字 / 賠=綠字，移除 ▲/▼ 三角形)
+    // 5. 目前賺賠 (四捨五入至百位，去除幾十幾塊，台灣股市規範：賺=紅字 / 賠=綠字)
     const currentProfitEl = document.getElementById('view-current-profit');
     if (currentProfitEl) {
       if (isProfit) {
@@ -1531,7 +1583,7 @@
     const targetPriceEl = document.getElementById('view-target-price');
     if (targetPriceEl) targetPriceEl.textContent = `${stock.targetPrice.toLocaleString()} 元`;
 
-    // 7. 預計賺賠 (直接顯示 賺 / 賠，台灣股市規範：賺=紅字 / 賠=綠字，移除 ▲/▼ 三角形)
+    // 7. 預計賺賠 (四捨五入至百位，直接顯示 賺 / 賠，台灣股市規範：賺=紅字 / 賠=綠字)
     const targetProfitEl = document.getElementById('view-target-profit');
     if (targetProfitEl) {
       const isTargetProfit = (stock.targetPrice >= stock.buyPrice);
@@ -1591,10 +1643,11 @@
 
       case 'shares':
         const sheets = (stock.shares >= 1000) ? `${Math.floor(stock.shares / 1000)} 張` : '';
+        const sharesSpeech = formatNumberToChineseSpeech(stock.shares);
         if (sheets) {
-          text = `買入數量，${sheets}，共 ${stock.shares} 股。`;
+          text = `買入數量，${sheets}，共 ${sharesSpeech} 股。`;
         } else {
-          text = `買入數量，${stock.shares} 股。`;
+          text = `買入數量，${sharesSpeech} 股。`;
         }
         break;
 
@@ -1741,17 +1794,10 @@
         p3.textContent = `小股貼心話：不用天天盯盤，多喝溫水、放寬心散散步！`;
       }
 
-      // 5. 產生超白話語音朗讀內容 (100% 同步螢幕金額，絕不四捨五入)
-      if (isTw) {
-        const twMoney = moneyText.replace(/元/g, '圓');
-        this.currentSpeechText = isProfit
-          ? `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，趁了 ${twMoney}！走勢足穩，安心放著領分紅，多飲溫水出去行一行喔！`
-          : `${elder.title}，${stock.name}這馬現價 ${stock.currentPrice} 圓，稍微休息拉回，好公司免煩惱，耐心放著等起飛喔！`;
-      } else {
-        this.currentSpeechText = isProfit
-          ? `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，現賺 ${moneyText}！走勢很穩，安心放著領分紅，喝杯溫水出去散散步喔！`
-          : `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，目前稍微拉回休息，好公司不用慌，耐心放著等起飛喔！`;
-      }
+      // 5. 產生超白話語音朗讀內容 (四捨五入至百位，清晰親切)
+      this.currentSpeechText = isProfit
+        ? `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，現賺 ${moneyText}！走勢很穩，安心放著領分紅，喝杯溫水出去散散步喔！`
+        : `${elder.title}，您的${stock.name}現在是 ${stock.currentPrice} 元，目前稍微拉回休息，好公司不用慌，耐心放著等起飛喔！`;
 
       modal.classList.remove('hidden');
       Speech.speak(this.currentSpeechText);
