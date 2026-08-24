@@ -2416,6 +2416,12 @@
       return;
     }
 
+    const btnSubmit = document.getElementById('btn-submit-feedback');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = '✉️ 正在送出中...';
+    }
+
     try {
       const feedbackList = JSON.parse(localStorage.getItem('xiaogu_user_feedbacks') || '[]');
       feedbackList.push({
@@ -2425,11 +2431,29 @@
         time: new Date().toLocaleString('zh-TW')
       });
       localStorage.setItem('xiaogu_user_feedbacks', JSON.stringify(feedbackList));
+
+      // 即時發送到 Google Apps Script 雲端寄送 Email 通知給陳新昱 (pod0987183520@gmail.com)
+      const targetUrl = (AppState.gasApiUrl && AppState.gasApiUrl.trim()) ? AppState.gasApiUrl.trim() : OFFICIAL_GAS_API_URL;
+      if (targetUrl) {
+        const feedbackUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') 
+          + 'action=feedback'
+          + '&name=' + encodeURIComponent(name || '熱心使用者')
+          + '&phone=' + encodeURIComponent(phone || '未提供')
+          + '&content=' + encodeURIComponent(content);
+        
+        fetch(feedbackUrl, { mode: 'no-cors' }).catch(() => {});
+      }
     } catch(e) {}
 
-    alert(`🎉 感謝您的寶貴建議！\n陳新昱與小股團隊已收到您的回饋，我們會持續用心優化陪伴長輩的每項功能！❤️`);
-    document.getElementById('feedback-input-content').value = '';
-    closeFeedbackModal();
+    setTimeout(() => {
+      alert(`🎉 感謝您的寶貴建議！\n陳新昱與小股團隊已收到您的回饋信件，我們會持續用心優化陪伴長輩的每項功能！❤️`);
+      document.getElementById('feedback-input-content').value = '';
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = '✉️ 送出建議';
+      }
+      closeFeedbackModal();
+    }, 450);
   };
 
   function renderElderStocksEditor(elderKey, containerId) {
