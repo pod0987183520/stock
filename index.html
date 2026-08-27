@@ -17,7 +17,7 @@ AI互動陪伴.給予正向情緒價值">
   <link rel="icon" type="image/png" href="z_img_app_192.png">
   <link rel="apple-touch-icon" href="z_img_app_192.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=4.00">
+  <link rel="stylesheet" href="css/style.css?v=4.01">
   <script>
     (function() {
       try {
@@ -172,9 +172,12 @@ AI互動陪伴.給予正向情緒價值">
         </div>
       </section>
 
-      <!-- 底部版權與延緩失智陪伴聲明 (點擊系統設計開窗反饋) -->
+      <!-- 底部版權與延緩失智陪伴聲明 (點擊我想建議開窗反饋) -->
       <footer class="app-footer">
-        <p class="footer-design" onclick="openFeedbackModal()" role="button" title="點擊向系統設計與開發者陳新昱提供寶貴建議">💡 系統設計與開發：陳新昱</p>
+        <div class="footer-design-bar">
+          <span class="footer-design-text">App設計:陳新昱</span>
+          <button type="button" class="btn-footer-suggest" onclick="openFeedbackModal()" title="點擊向陳新昱提供寶貴建議">💡 我想建議</button>
+        </div>
         <p class="footer-notice">此為延緩失智陪伴工具，實際交易需晚輩代勞</p>
       </footer>
 
@@ -490,7 +493,7 @@ AI互動陪伴.給予正向情緒價值">
       <div class="feedback-modal-header">
         <div class="feedback-avatar-badge">
           <span style="font-size: 28px;">💡</span>
-          <span class="feedback-title-badge">系統設計與開發：陳新昱</span>
+          <span class="feedback-title-badge">App設計：陳新昱</span>
         </div>
       </div>
       <p class="feedback-subtitle">歡迎留下您寶貴的使用心得或建議，我們將持續用心優化長輩的陪伴體驗！</p>
@@ -513,11 +516,11 @@ AI互動陪伴.給予正向情緒價值">
   </div>
 
   <!-- 核心腳本載入 -->
-  <script src="js/app.js?v=4.00"></script>
+  <script src="js/app.js?v=4.01"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=4.00')
+        navigator.serviceWorker.register('sw.js?v=4.01')
           .then((reg) => console.log('小股同學 ServiceWorker 註冊成功！', reg.scope))
           .catch((err) => console.error('ServiceWorker 註冊失敗:', err));
       });

@@ -519,7 +519,7 @@ body {
   box-sizing: border-box;
 }
 
-/* 底部聲明 (點擊系統設計開窗・文字精準不折行) */
+/* 底部聲明 (App設計與我想建議按鈕・文字精準不折行) */
 .app-footer {
   margin-top: 10px;
   padding: 10px 4px 6px 4px;
@@ -527,29 +527,55 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.footer-design {
-  font-size: 22px;
+.footer-design-bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  flex-wrap: nowrap;
+}
+
+.footer-design-text {
+  font-size: 20px;
   font-weight: 900;
   color: #FEF08A;
   text-shadow: 0 0 10px rgba(254, 240, 138, 0.35);
-  margin-bottom: 4px;
   line-height: 1.3;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.btn-footer-suggest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #38BDF8;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
   cursor: pointer;
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 8px;
+  white-space: nowrap;
+  line-height: 1.2;
   transition: all 0.15s ease;
-  -webkit-tap-highlight-color: rgba(254, 240, 138, 0.3);
+  -webkit-tap-highlight-color: rgba(56, 189, 248, 0.3);
 }
 
-.footer-design:hover {
-  background: rgba(254, 240, 138, 0.12);
-  transform: scale(1.02);
+.btn-footer-suggest:hover {
+  background: linear-gradient(135deg, #0369A1 0%, #075985 100%);
+  border-color: #7DD3FC;
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.55);
 }
 
-.footer-design:active {
-  transform: scale(0.96);
-  background: rgba(254, 240, 138, 0.25);
+.btn-footer-suggest:active {
+  transform: translateY(0) scale(0.96);
+  background: #075985;
 }
 
 .footer-notice {
